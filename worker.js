@@ -147,6 +147,11 @@ export default {
     const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
 
+    if(request.method==="GET"&&url.pathname==="/api/users"){
+      if(!member||!canManage)return json({error:"Only workspace administrators can view users."},403);
+      const result=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.status,m.role,m.created_at FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.organization_id=? ORDER BY m.created_at DESC LIMIT 200").bind(organizationId).all();
+      return json({users:result.results||[]});
+    }
     if(request.method==="POST"&&url.pathname==="/api/users"){
       if(!member||!canManage)return json({error:"Only authenticated workspace administrators can create users."},403);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
