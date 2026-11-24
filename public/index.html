@@ -68,6 +68,20 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <div class="metric"><strong id="monitoredCount">00</strong><small>Shipments with tracking timestamps</small></div>
 </div>
 </section>
+<section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
+<h2 id="shipmentTitle">Shipment registry & tracking events</h2>
+<p class="muted" style="font-size:13px">Record shipments and operational scan updates. Carrier integrations can be connected after provider credentials are available.</p>
+<form id="shipmentCreateForm">
+<div class="sla-grid">
+<div><label for="shipmentTracking">Tracking / AWB number</label><input id="shipmentTracking" required maxlength="100"></div>
+<div><label for="shipmentCarrier">Carrier code (optional)</label><input id="shipmentCarrier" maxlength="40" placeholder="e.g. DELHIVERY"></div>
+<div><label for="shipmentStatus">Current status</label><select id="shipmentStatus"><option value="unknown">Unknown</option><option value="created">Created</option><option value="picked_up">Picked up</option><option value="in_transit">In transit</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="exception">Exception</option><option value="returned">Returned</option></select></div>
+</div>
+<button class="btn" id="shipmentCreateButton" type="submit">Add shipment</button>
+</form>
+<p id="shipmentMessage" class="muted" role="status" aria-live="polite"></p>
+<div id="shipmentList"><p class="muted">Loading shipments…</p></div>
+</section>
 <div class="grid">
 <section class="panel">
 <h2>1. Submit a shipment enquiry</h2>
@@ -149,6 +163,62 @@ function configureUserAdmin(){
  const select=document.getElementById("newUserRole");
  select.replaceChildren(...options.map(roleName=>{const option=document.createElement("option");option.value=roleName;option.textContent=roleName.replaceAll("_"," ");return option;}));
  loadUsers();
+}
+
+function shipmentCanEdit(){
+ return !currentUser||["platform_admin","org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator"].includes(currentUser.role);
+}
+async function loadShipmentEvents(shipmentId,box){
+ box.textContent="Loading events…";
+ try{
+  const response=await fetch("/api/shipments/"+encodeURIComponent(shipmentId)+"/events",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load events");
+  box.replaceChildren();
+  if(!data.events?.length){box.textContent="No tracking events recorded yet.";return;}
+  data.events.forEach(item=>{const row=document.createElement("p");row.className="muted";row.style.fontSize="12px";row.textContent=new Date(item.event_time).toLocaleString()+" · "+item.event_status.replaceAll("_"," ")+" · "+item.description+(item.location?" · "+item.location:"");box.appendChild(row);});
+ }catch(error){box.textContent=error.message;}
+}
+async function loadShipments(){
+ const box=document.getElementById("shipmentList");if(!box)return;
+ try{
+  const response=await fetch("/api/shipments",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load shipments");
+  box.replaceChildren();
+  if(!Array.isArray(data.shipments)||!data.shipments.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No shipments recorded yet.";box.appendChild(empty);return;}
+  data.shipments.forEach(shipment=>{
+   const card=document.createElement("div");card.className="ticket";
+   const heading=document.createElement("b");heading.textContent=shipment.tracking_number;card.appendChild(heading);
+   const detail=document.createElement("p");detail.textContent=(shipment.carrier_code||"Carrier not set")+" · "+shipment.current_status.replaceAll("_"," ")+" · "+shipment.source;card.appendChild(detail);
+   if(shipment.last_tracking_at){const stamp=document.createElement("p");stamp.textContent="Last tracking update: "+new Date(shipment.last_tracking_at).toLocaleString();card.appendChild(stamp);}
+   const historyButton=document.createElement("button");historyButton.type="button";historyButton.className="btn secondary";historyButton.textContent="View tracking history";historyButton.style.marginRight="8px";
+   const history=document.createElement("div");history.style.display="none";history.style.marginTop="10px";
+   historyButton.addEventListener("click",()=>{history.style.display=history.style.display==="none"?"block":"none";if(history.style.display==="block")loadShipmentEvents(shipment.id,history);});
+   card.appendChild(historyButton);card.appendChild(history);
+   if(shipmentCanEdit()){
+    const eventButton=document.createElement("button");eventButton.type="button";eventButton.className="btn secondary";eventButton.textContent="Add tracking update";
+    const eventForm=document.createElement("form");eventForm.style.display="none";eventForm.style.marginTop="10px";
+    const status=document.createElement("select");["created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"].forEach(value=>{const option=document.createElement("option");option.value=value;option.textContent=value.replaceAll("_"," ");status.appendChild(option);});
+    const description=document.createElement("input");description.required=true;description.maxLength=500;description.placeholder="Scan details / event description";description.style.marginTop="8px";
+    const location=document.createElement("input");location.maxLength=120;location.placeholder="Location (optional)";location.style.marginTop="8px";
+    const submit=document.createElement("button");submit.type="submit";submit.className="btn";submit.textContent="Save tracking update";
+    eventForm.append(status,description,location,submit);
+    eventButton.addEventListener("click",()=>{eventForm.style.display=eventForm.style.display==="none"?"block":"none";});
+    eventForm.addEventListener("submit",async event=>{event.preventDefault();submit.disabled=true;try{const res=await fetch("/api/shipments/"+encodeURIComponent(shipment.id)+"/events",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({event_status:status.value,description:description.value.trim(),location:location.value.trim()})});const result=await res.json();if(!res.ok)throw new Error(result.error||"Could not save event");await loadShipments();}catch(error){submit.disabled=false;submit.textContent=error.message;}});
+    card.append(eventButton,eventForm);
+   }
+   box.appendChild(card);
+  });
+ }catch(error){box.textContent="Shipment list unavailable: "+error.message;}
+}
+async function createShipment(event){
+ event.preventDefault();const button=document.getElementById("shipmentCreateButton"),message=document.getElementById("shipmentMessage");
+ button.disabled=true;message.textContent="Saving shipment…";
+ try{
+  const response=await fetch("/api/shipments",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({tracking_number:document.getElementById("shipmentTracking").value.trim(),carrier_code:document.getElementById("shipmentCarrier").value.trim(),current_status:document.getElementById("shipmentStatus").value})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not create shipment");
+  document.getElementById("shipmentCreateForm").reset();message.textContent="Shipment added.";await loadShipments();
+ }catch(error){message.textContent=error.message;}
+ finally{button.disabled=false;}
 }
 
 function escapeHTML(value){
@@ -313,7 +383,7 @@ async function checkSession(){
   let data=await response.json();
   if(!data.authenticated){response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});data=await response.json();}
   if(response.ok&&data.authenticated){
-   currentUser=data.user||null;configureUserAdmin();gate.style.display='none';app.classList.add('authenticated');loadTickets();return;
+   currentUser=data.user||null;configureUserAdmin();document.getElementById('shipmentCreateForm').style.display=shipmentCanEdit()?'block':'none';gate.style.display='none';app.classList.add('authenticated');loadTickets();loadShipments();return;
   }
   currentUser=null;document.getElementById('userAdminPanel').style.display='none';
   gate.style.display='block';app.classList.remove('authenticated');
@@ -349,6 +419,7 @@ document.addEventListener('DOMContentLoaded',function(){
  ['ticketSearch','priorityFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='ticketSearch'?'input':'change',applyTicketFilters));
  document.getElementById('loginForm').addEventListener('submit',login);
  document.getElementById('userCreateForm').addEventListener('submit',createUser);
+ document.getElementById('shipmentCreateForm').addEventListener('submit',createShipment);
  checkSession();
 });
 </script>
