@@ -1,12 +1,98 @@
-const json = (data, status = 200) => new Response(JSON.stringify(data), {
-  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" }
+const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.stringify(data), {
+  status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...extraHeaders }
 });
+
+const SESSION_COOKIE = "vamsee_session";
+const SESSION_SECONDS = 8 * 60 * 60;
+const encoder = new TextEncoder();
+
+function toBase64Url(bytes) {
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/g, "");
+}
+async function sessionKey(secret) {
+  return crypto.subtle.importKey("raw", encoder.encode(secret), { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]);
+}
+async function createSession(secret) {
+  const expires = String(Math.floor(Date.now() / 1000) + SESSION_SECONDS);
+  const signature = await crypto.subtle.sign("HMAC", await sessionKey(secret), encoder.encode(expires));
+  return expires + "." + toBase64Url(new Uint8Array(signature));
+}
+async function validSession(request, secret) {
+  if (!secret) return false;
+  const cookie = request.headers.get("Cookie") || "";
+  const part = cookie.split(";").map(v => v.trim()).find(v => v.startsWith(SESSION_COOKIE + "="));
+  if (!part) return false;
+  const pieces = part.slice(SESSION_COOKIE.length + 1).split(".");
+  if (pieces.length !== 2 || !pieces[0].split("").every(ch => ch >= "0" && ch <= "9") ||
+      Number(pieces[0]) <= Math.floor(Date.now() / 1000)) return false;
+  try {
+    const signature = pieces[1].replaceAll("-", "+").replaceAll("_", "/");
+    const padded = signature + "=".repeat((4 - signature.length % 4) % 4);
+    const bytes = Uint8Array.from(atob(padded), ch => ch.charCodeAt(0));
+    return await crypto.subtle.verify("HMAC", await sessionKey(secret), bytes, encoder.encode(pieces[0]));
+  } catch { return false; }
+}
+function sameOrigin(request) {
+  return request.headers.get("Origin") === new URL(request.url).origin;
+}
+async function passwordMatches(candidate, expected) {
+  const [a, b] = await Promise.all([
+    crypto.subtle.digest("SHA-256", encoder.encode(candidate)),
+    crypto.subtle.digest("SHA-256", encoder.encode(expected))
+  ]);
+  const aa = new Uint8Array(a), bb = new Uint8Array(b);
+  let diff = 0;
+  for (let i = 0; i < aa.length; i++) diff |= aa[i] ^ bb[i];
+  return diff === 0;
+}
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (!url.pathname.startsWith("/api/")) {
       return env.ASSETS.fetch(request);
+    }
+
+    // Login and session endpoints are the only unauthenticated API routes.
+    if (url.pathname === "/api/login" && request.method === "POST") {
+      if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
+      if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
+        return json({ error: "Access controls are not configured. Set VAMSEE_ACCESS_PASSWORD and a 32+ character VAMSEE_SESSION_SECRET in Worker secrets." }, 503);
+      }
+      let body;
+      try { body = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
+      if (typeof body.password !== "string" || body.password.length > 256 ||
+          !(await passwordMatches(body.password, env.VAMSEE_ACCESS_PASSWORD))) {
+        return json({ error: "Incorrect password." }, 401);
+      }
+      const token = await createSession(env.VAMSEE_SESSION_SECRET);
+      return json({ ok: true }, 200, {
+        "Set-Cookie": SESSION_COOKIE + "=" + token + "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=" + SESSION_SECONDS
+      });
+    }
+    if (url.pathname === "/api/session" && request.method === "GET") {
+      if (!env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
+        return json({ authenticated: false, configured: false }, 503);
+      }
+      return json({ authenticated: await validSession(request, env.VAMSEE_SESSION_SECRET), configured: true });
+    }
+    if (url.pathname === "/api/logout" && request.method === "POST") {
+      if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
+      return json({ ok: true }, 200, {
+        "Set-Cookie": SESSION_COOKIE + "=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+      });
+    }
+
+    if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
+      return json({ error: "VAMSEE access controls are not configured." }, 503);
+    }
+    if (!(await validSession(request, env.VAMSEE_SESSION_SECRET))) {
+      return json({ error: "Authentication required." }, 401);
+    }
+    if (["POST", "PATCH", "PUT", "DELETE"].includes(request.method) && !sameOrigin(request)) {
+      return json({ error: "Request origin rejected." }, 403);
     }
     if (!env.DB) return json({ error: "Database binding DB is not configured." }, 503);
     if (request.method === "GET" && url.pathname === "/api/health") {
