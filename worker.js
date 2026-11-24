@@ -36,11 +36,36 @@ Enquiry type: ${issueLabels[input.issue_type]}
 Customer message: ${input.message.trim().slice(0,1500)}
 Return only JSON.`;
       try {
-        const result = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", { prompt, max_tokens: 500 });
-        const raw = typeof result === "string" ? result : (result.response || result.output || "");
-        const match = String(raw).match(/\{[\s\S]*\}/);
-        if (!match) throw new Error("AI returned an unreadable response.");
-        const suggestion = JSON.parse(match[0]);
+        const result = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", {
+          prompt,
+          max_tokens: 500,
+          response_format: { type: "json_object" },
+          chat_template_kwargs: { enable_thinking: false }
+        });
+        // Workers AI models may return plain text, a response/output field, or
+        // an OpenAI-compatible choices/message/content envelope. Inspect all
+        // text-bearing fields rather than assuming one response shape.
+        const candidates = [];
+        const collectText = (value, depth = 0) => {
+          if (depth > 6 || value == null) return;
+          if (typeof value === "string") { candidates.push(value); return; }
+          if (Array.isArray(value)) { for (const item of value) collectText(item, depth + 1); return; }
+          if (typeof value === "object") {
+            for (const key of ["response", "output", "text", "content", "message", "choices", "result"]) {
+              if (key in value) collectText(value[key], depth + 1);
+            }
+          }
+        };
+        collectText(result);
+        if (typeof result === "string") candidates.unshift(result);
+        let suggestion = null;
+        for (const candidate of candidates) {
+          const cleaned = candidate.replace(/<think>[\\s\\S]*?<\\/think>/gi, "").trim();
+          const match = cleaned.match(/\\{[\\s\\S]*\\}/);
+          if (!match) continue;
+          try { suggestion = JSON.parse(match[0]); break; } catch {}
+        }
+        if (!suggestion) throw new Error("AI returned text, but no valid JSON object could be extracted.");
         if (!["HIGH", "MEDIUM", "NORMAL"].includes(suggestion.priority) ||
             typeof suggestion.assigned_queue !== "string" || typeof suggestion.next_action !== "string" ||
             typeof suggestion.customer_reply !== "string" || typeof suggestion.reason !== "string") {
