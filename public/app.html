@@ -246,23 +246,23 @@ function parseCsv(text){
  const rows=[];let row=[],cell="",quoted=false;
  for(let i=0;i<text.length;i++){const ch=text[i],next=text[i+1];
   if(quoted){if(ch==='"'&&next==='"'){cell+='"';i++;}else if(ch==='"')quoted=false;else cell+=ch;}
-  else if(ch==='"')quoted=true;else if(ch===','){row.push(cell);cell="";}else if(ch==="\\n"){row.push(cell);rows.push(row);row=[];cell="";}else if(ch!=="\\r")cell+=ch;
+  else if(ch==='"')quoted=true;else if(ch===','){row.push(cell);cell="";}else if(ch==="\n"){row.push(cell);rows.push(row);row=[];cell="";}else if(ch!=="\r")cell+=ch;
  }
  if(quoted)throw new Error("CSV contains an unclosed quoted field.");
  if(cell.length||row.length){row.push(cell);rows.push(row);}
  return rows.filter(r=>r.some(v=>String(v).trim()!==""));
 }
 function downloadCsvFile(filename,content){const blob=new Blob([content],{type:"text/csv;charset=utf-8"}),url=URL.createObjectURL(blob),link=document.createElement("a");link.href=url;link.download=filename;document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);}
-function downloadShipmentTemplate(){downloadCsvFile("vamsee-shipment-template.csv","tracking_number,carrier_code,current_status,last_tracking_at,external_reference\\nAWB123456,DELHIVERY,in_transit,2026-11-25T10:00:00Z,ORDER-1001\\n");}
+function downloadShipmentTemplate(){downloadCsvFile("vamsee-shipment-template.csv","tracking_number,carrier_code,current_status,last_tracking_at,external_reference\nAWB123456,DELHIVERY,in_transit,2026-11-25T10:00:00Z,ORDER-1001\n");}
 async function importShipmentsCsv(event){
  event.preventDefault();const file=document.getElementById("shipmentCsvFile").files[0],button=document.getElementById("shipmentImportButton"),message=document.getElementById("shipmentImportMessage");
  if(!file){message.textContent="Choose a CSV file first.";return;}if(file.size>1024*1024){message.textContent="CSV file must be smaller than 1 MB.";return;}
  button.disabled=true;message.textContent="Reading and validating CSV…";
  try{
   const matrix=parseCsv(await file.text());if(matrix.length<2)throw new Error("CSV must include a header and at least one shipment row.");
-  const headers=matrix[0].map(h=>h.trim().toLowerCase().replace(/\\s+/g,"_"));
+  const headers=matrix[0].map(h=>h.trim().toLowerCase().replace(/\s+/g,"_"));
   const index=name=>headers.indexOf(name);if(index("tracking_number")<0)throw new Error("Required CSV header missing: tracking_number.");
-  const shipments=matrix.slice(1).map((r,i)=>({tracking_number:r[index("tracking_number")]||"",carrier_code:index("carrier_code")>=0?r[index("carrier_code")]||"": "",current_status:index("current_status")>=0?(r[index("current_status")]||"unknown").toLowerCase().replace(/[\\s-]+/g,"_"):"unknown",last_tracking_at:index("last_tracking_at")>=0?r[index("last_tracking_at")]||null:null,external_reference:index("external_reference")>=0?r[index("external_reference")]||"":""}));
+  const shipments=matrix.slice(1).map((r,i)=>({tracking_number:r[index("tracking_number")]||"",carrier_code:index("carrier_code")>=0?r[index("carrier_code")]||"": "",current_status:index("current_status")>=0?(r[index("current_status")]||"unknown").toLowerCase().replace(/[\s-]+/g,"_"):"unknown",last_tracking_at:index("last_tracking_at")>=0?r[index("last_tracking_at")]||null:null,external_reference:index("external_reference")>=0?r[index("external_reference")]||"":""}));
   if(shipments.length>200)throw new Error("Maximum 200 shipment rows per upload. Split the file into smaller batches.");
   const response=await fetch("/api/shipments/import",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({shipments})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Import failed.");
   message.textContent="Import complete: "+result.imported+" rows created or updated. Refreshing dashboard…";document.getElementById("shipmentCsvFile").value="";await loadShipments();
@@ -271,7 +271,7 @@ async function importShipmentsCsv(event){
 async function exportShipmentsCsv(){
  const message=document.getElementById("shipmentImportMessage");try{const r=await fetch("/api/shipments",{headers:{"Accept":"application/json"},cache:"no-store"}),d=await r.json();if(!r.ok)throw new Error(d.error||"Could not export shipments");
  const columns=["tracking_number","carrier_code","current_status","last_tracking_at","external_reference"],escape=v=>'"'+String(v??"").replaceAll('"','""')+'"';
- const lines=[columns.join(","),...(d.shipments||[]).map(s=>columns.map(k=>escape(s[k])).join(","))];downloadCsvFile("vamsee-shipments.csv",lines.join("\\r\\n"));message.textContent="Workspace shipment CSV exported.";
+ const lines=[columns.join(","),...(d.shipments||[]).map(s=>columns.map(k=>escape(s[k])).join(","))];downloadCsvFile("vamsee-shipments.csv",lines.join("\r\n"));message.textContent="Workspace shipment CSV exported.";
  }catch(e){message.textContent=e.message;}
 }
 async function loadShipments(){
