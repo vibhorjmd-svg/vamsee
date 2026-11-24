@@ -15,9 +15,10 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <h1>Shipment support, <span style="color:var(--lime)">without the manual chase.</span></h1>
 <p class="sub">A practical preview of how an AI-assisted workflow can classify shipment enquiries, draft customer replies and flag cases that need an operations team's attention.</p>
 <div class="metrics">
-<div class="metric"><strong id="total">03</strong><small>Sample enquiries</small></div>
-<div class="metric"><strong id="urgent">01</strong><small>Priority escalations</small></div>
-<div class="metric"><strong id="resolved">02</strong><small>Routine responses</small></div>
+<div class="metric"><strong id="total">00</strong><small>Total tickets</small></div>
+<div class="metric"><strong id="urgent">00</strong><small>Open escalations</small></div>
+<div class="metric"><strong id="progress">00</strong><small>In progress</small></div>
+<div class="metric"><strong id="resolved">00</strong><small>Resolved</small></div>
 </div>
 <div class="grid">
 <section class="panel">
@@ -37,6 +38,11 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <section class="panel">
 <h2>2. Operations queue</h2>
 <p class="muted" style="margin-top:-8px;font-size:13px">Live tickets loaded from the VAMSEE database.</p>
+<div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin:12px 0">
+<input id="ticketSearch" type="search" placeholder="Search customer, AWB or ticket" aria-label="Search tickets">
+<select id="priorityFilter" aria-label="Filter by priority"><option value="">All priorities</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="NORMAL">Normal</option></select>
+<select id="statusFilter" aria-label="Filter by status"><option value="">All statuses</option><option value="OPEN">Open</option><option value="IN_PROGRESS">In progress</option><option value="RESOLVED">Resolved</option></select>
+</div>
 <div id="queue"><p class="muted">Loading live tickets…</p></div>
 <div class="note"><b>Workflow preview</b><div class="flow"><span class="step">Enquiry received</span><span class="step">Classify issue</span><span class="step">Draft response</span><span class="step">Escalate if needed</span></div></div>
 </section>
@@ -45,6 +51,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </main>
 <script>
 let latestReply='';
+let allTickets=[];
 const configs={
  delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review immediately',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check with the carrier for the latest movement status.\n\nWe’ll share an update as soon as the shipment status is confirmed. Thank you for your patience.\n\nVAMSEE Support'},
  tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\n\nThanks for contacting us about shipment '+t+'. Tracking events can sometimes take time to appear after a carrier scan. We’ve marked this for a tracking-status check and recommend reviewing the next scan update.\n\nWe’ll keep you informed if the status remains unchanged.\n\nVAMSEE Support'},
@@ -58,18 +65,43 @@ function escapeHTML(value){
  });
 }
 function renderTickets(tickets){
- const q=document.getElementById('queue');q.replaceChildren();
- if(!tickets.length)q.innerHTML='<p class="muted">No tickets yet. Submit a shipment enquiry to create the first one.</p>';
- tickets.forEach(function(ticket){
+ allTickets=Array.isArray(tickets)?tickets:[];
+ document.getElementById('total').textContent=String(allTickets.length).padStart(2,'0');
+ document.getElementById('urgent').textContent=String(allTickets.filter(t=>t.priority==='HIGH'&&t.status!=='RESOLVED').length).padStart(2,'0');
+ document.getElementById('progress').textContent=String(allTickets.filter(t=>t.status==='IN_PROGRESS').length).padStart(2,'0');
+ document.getElementById('resolved').textContent=String(allTickets.filter(t=>t.status==='RESOLVED').length).padStart(2,'0');
+ applyTicketFilters();
+}
+function applyTicketFilters(){
+ const q=(document.getElementById('ticketSearch')?.value||'').trim().toLowerCase();
+ const priority=document.getElementById('priorityFilter')?.value||'';
+ const status=document.getElementById('statusFilter')?.value||'';
+ const filtered=allTickets.filter(t=>{
+  const haystack=[t.id,t.customer_name,t.tracking_number,t.issue_type,t.assigned_queue].join(' ').toLowerCase();
+  return (!q||haystack.includes(q))&&(!priority||t.priority===priority)&&(!status||t.status===status);
+ });
+ const queue=document.getElementById('queue');queue.replaceChildren();
+ if(!filtered.length){
+  const empty=document.createElement('p');empty.className='muted';
+  empty.textContent=allTickets.length?'No tickets match these filters.':'No tickets yet. Submit a shipment enquiry to create the first one.';
+  queue.appendChild(empty);return;
+ }
+ filtered.forEach(ticket=>{
   const el=document.createElement('div');el.className='ticket';
   const pc=ticket.priority==='HIGH'?'urgent':ticket.priority==='MEDIUM'?'medium':'';
   const statuses=['OPEN','IN_PROGRESS','RESOLVED'];
-  el.innerHTML='<div class="tickethead"><b>'+escapeHTML(ticket.id)+' · '+escapeHTML(ticket.issue_type)+'</b><span class="pill '+pc+'">'+escapeHTML(ticket.priority)+'</span></div><p>'+escapeHTML(ticket.customer_name)+' · '+escapeHTML(ticket.tracking_number)+'</p><p>'+escapeHTML(ticket.message||'')+'</p><span class="pill">'+escapeHTML(ticket.assigned_queue)+'</span><p>Next action: '+escapeHTML(ticket.next_action)+'</p><label>Status</label><select aria-label="Ticket status">'+statuses.map(function(s){return '<option value="'+s+'" '+(ticket.status===s?'selected':'')+'>'+s.replace('_',' ')+'</option>';}).join('')+'</select>';
-  const select=el.querySelector('select');select.addEventListener('change',function(){updateTicketStatus(ticket.id,select.value,select);});q.appendChild(el);
+  const escalation=ticket.priority==='HIGH'&&ticket.status!=='RESOLVED';
+  const created=ticket.created_at?new Date(ticket.created_at).toLocaleString():'';
+  el.innerHTML='<div class="tickethead"><b>'+escapeHTML(ticket.id)+' · '+escapeHTML(ticket.issue_type)+'</b><span class="pill '+pc+'">'+escapeHTML(ticket.priority)+'</span></div>'+
+   (escalation?'<span class="pill urgent">REVIEW REQUIRED</span>':'')+
+   '<p>'+escapeHTML(ticket.customer_name)+' · '+escapeHTML(ticket.tracking_number)+'</p>'+
+   '<p>'+escapeHTML(ticket.message||'')+'</p>'+
+   '<span class="pill">'+escapeHTML(ticket.assigned_queue)+'</span>'+
+   '<p>Next action: '+escapeHTML(ticket.next_action)+'</p>'+
+   (created?'<p>Received: '+escapeHTML(created)+'</p>':'')+
+   '<label>Status</label><select aria-label="Ticket status">'+statuses.map(s=>'<option value="'+s+'" '+(ticket.status===s?'selected':'')+'>'+s.replace('_',' ')+'</option>').join('')+'</select>';
+  const select=el.querySelector('select');select.addEventListener('change',()=>updateTicketStatus(ticket.id,select.value,select));queue.appendChild(el);
  });
- document.getElementById('total').textContent=String(tickets.length).padStart(2,'0');
- document.getElementById('urgent').textContent=String(tickets.filter(function(t){return t.priority==='HIGH'&&t.status!=='RESOLVED';}).length).padStart(2,'0');
- document.getElementById('resolved').textContent=String(tickets.filter(function(t){return t.priority!=='HIGH';}).length).padStart(2,'0');
 }
 async function loadTickets(){
  const q=document.getElementById('queue');q.innerHTML='<p class="muted">Loading live tickets…</p>';
@@ -130,7 +162,10 @@ function copyReply(){
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(latestReply).then(function(){alert('Response copied.');}).catch(function(){alert('Copy is unavailable in this browser.');});
  else alert('Copy is unavailable in this browser.');
 }
-document.addEventListener('DOMContentLoaded',loadTickets);
+document.addEventListener('DOMContentLoaded',function(){
+ ['ticketSearch','priorityFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='ticketSearch'?'input':'change',applyTicketFilters));
+ loadTickets();
+});
 </script>
 </body>
 </html>
