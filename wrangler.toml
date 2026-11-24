@@ -12,3 +12,7 @@ binding = "DB"
 database_name = "vamsee-tickets"
 database_id = "a2b27b90-5598-4ef5-86e8-5176f4519181"
 migrations_dir = "migrations"
+
+[ai]
+binding = "AI"
+remote = true
