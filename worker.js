@@ -200,6 +200,7 @@ export default {
       const hasLegacySession = !hasIndividualCookie && env.VAMSEE_ACCESS_PASSWORD &&
         await validSession(request, env.VAMSEE_SESSION_SECRET);
       if (!assistMember && !hasLegacySession) return json({ error: "Authentication required." }, 401);
+      if (!canOperate) return json({ error: "Your role cannot use AI assistance." }, 403);
       let input;
       try { input = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       const allowedIssues = ["delay", "tracking", "delivery", "address", "damage"];
