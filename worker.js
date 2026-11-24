@@ -299,6 +299,48 @@ Return only JSON.`;
         .bind(t.id,organizationId,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
       return json({ ok: true, id: t.id }, 201);
     }
+
+    if(request.method==="GET"&&url.pathname==="/api/shipments"){
+      const result=await env.DB.prepare("SELECT id,tracking_number,carrier_code,aggregator_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at FROM shipments WHERE organization_id=? ORDER BY updated_at DESC LIMIT 200").bind(organizationId).all();
+      return json({shipments:result.results||[]});
+    }
+    if(request.method==="POST"&&url.pathname==="/api/shipments"){
+      if(!canOperate)return json({error:"Your role cannot create shipments."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const tracking=String(b.tracking_number||"").trim(),carrier=String(b.carrier_code||"").trim().toUpperCase(),status=String(b.current_status||"unknown").trim().toLowerCase();
+      const allowed=["unknown","created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
+      if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status))return json({error:"Provide a tracking number (max 100 characters), valid carrier code, and supported status."},400);
+      const id="shp_"+crypto.randomUUID(),now=new Date().toISOString();
+      try{
+        await env.DB.batch([
+          env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?, 'manual',?,?,?)").bind(id,organizationId,tracking,carrier||null,status,b.last_tracking_at||null,b.last_tracking_at||null,b.external_reference?String(b.external_reference).slice(0,120):null,now,now),
+          env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'shipment.created','shipment',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,id,JSON.stringify({tracking_number:tracking,carrier_code:carrier||null}))
+        ]);
+      }catch(error){if(String(error.message||"").includes("UNIQUE"))return json({error:"That tracking number already exists in this workspace."},409);throw error;}
+      return json({ok:true,id},201);
+    }
+    const eventMatch=url.pathname.match(/^\/api\/shipments\/([^/]+)\/events$/);
+    if(request.method==="GET"&&eventMatch){
+      const result=await env.DB.prepare("SELECT id,event_code,event_status,description,location,event_time,source,created_at FROM shipment_events WHERE shipment_id=? AND organization_id=? ORDER BY event_time DESC LIMIT 100").bind(decodeURIComponent(eventMatch[1]),organizationId).all();
+      return json({events:result.results||[]});
+    }
+    if(request.method==="POST"&&eventMatch){
+      if(!canOperate)return json({error:"Your role cannot add shipment events."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const status=String(b.event_status||"").trim().toLowerCase(),description=String(b.description||"").trim(),location=String(b.location||"").trim(),eventTime=new Date(b.event_time||Date.now());
+      const allowed=["created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
+      if(!allowed.includes(status)||!description||description.length>500||location.length>120||!Number.isFinite(eventTime.getTime()))return json({error:"Provide a valid event status, description, optional location, and event time."},400);
+      const shipmentId=decodeURIComponent(eventMatch[1]),exists=await env.DB.prepare("SELECT id FROM shipments WHERE id=? AND organization_id=?").bind(shipmentId,organizationId).first();
+      if(!exists)return json({error:"Shipment not found."},404);
+      const now=new Date().toISOString(),eventId="evt_"+crypto.randomUUID(),iso=eventTime.toISOString();
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_status,description,location,event_time,source) VALUES(?,?,?,?,?,?,?,'manual')").bind(eventId,organizationId,shipmentId,status,description,location||null,iso),
+        env.DB.prepare("UPDATE shipments SET current_status=?,last_tracking_at=?,last_event_at=?,updated_at=? WHERE id=? AND organization_id=?").bind(status,iso,iso,now,shipmentId,organizationId),
+        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'shipment.event_added','shipment',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,shipmentId,JSON.stringify({event_status:status,event_id:eventId}))
+      ]);
+      return json({ok:true,id:eventId},201);
+    }
+
     const match = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
     if (request.method === "PATCH" && match) {
       if(!canOperate)return json({error:"Your role cannot update tickets."},403);
