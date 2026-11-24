@@ -316,15 +316,21 @@ function applyTicketFilters(){
 async function loadTickets(){
  const q=document.getElementById('queue');q.innerHTML='<p class="muted">Loading live tickets…</p>';
  try{
-  const escalationResponse=await fetch('/api/escalations/run',{method:'POST',headers:{'Accept':'application/json'}});
-  if(!escalationResponse.ok){const escalationError=await escalationResponse.json().catch(()=>({}));throw new Error(escalationError.error||'Automatic escalation check failed (HTTP '+escalationResponse.status+')');}
-  const escalationData=await escalationResponse.json();
+  // Read-only viewers can see the queue but cannot run escalation mutations.
+  const canRunEscalations=!currentUser||['platform_admin','org_admin','logistics_manager','seller_admin','courier_manager'].includes(currentUser.role);
+  let escalatedCount=0;
+  if(canRunEscalations){
+   const escalationResponse=await fetch('/api/escalations/run',{method:'POST',headers:{'Accept':'application/json'}});
+   if(!escalationResponse.ok){const escalationError=await escalationResponse.json().catch(()=>({}));throw new Error(escalationError.error||'Automatic escalation check failed (HTTP '+escalationResponse.status+')');}
+   const escalationData=await escalationResponse.json();
+   escalatedCount=Number(escalationData.escalated||0);
+  }
   const response=await fetch('/api/tickets',{headers:{'Accept':'application/json'},cache:'no-store'});
   const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Could not load tickets (HTTP '+response.status+')');
+  if(!response.ok)throw new Error(data.error||'Could not load live tickets (HTTP '+response.status+')');
   if(!Array.isArray(data.tickets))throw new Error('Unexpected response from ticket API');
   renderTickets(data.tickets);
-  if(escalationData.escalated>0){const notice=document.createElement('p');notice.className='pill auto';notice.textContent=escalationData.escalated+' HIGH-priority ticket(s) automatically moved to Priority Escalations.';document.getElementById('queue').prepend(notice);}
+  if(escalatedCount>0){const notice=document.createElement('p');notice.className='pill auto';notice.textContent=escalatedCount+' HIGH-priority ticket(s) automatically moved to Priority Escalations.';document.getElementById('queue').prepend(notice);}
  }catch(error){
   q.innerHTML='<p class="muted">Unable to load live tickets: '+escapeHTML(error.message)+'</p><button class="btn secondary" type="button" onclick="loadTickets()">Retry</button>';
  }
