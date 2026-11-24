@@ -97,6 +97,17 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </section>
 <section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
 <h2 id="shipmentTitle">Shipment registry & tracking events</h2>
+<section class="panel" id="courierIntegrationPanel" style="margin-top:18px">
+ <div class="panelhead"><div><h2>Connect your courier</h2><p class="muted" style="font-size:13px">Securely connect a client-owned Shiprocket account. Each client must authorize access through their own API user.</p></div><span id="shiprocketStatus" class="pill">Not connected</span></div>
+ <div id="shiprocketConnected" class="muted" style="display:none;margin:10px 0">Shiprocket credentials verified. API access token is encrypted in the VAMSEE database.</div>
+ <form id="shiprocketConnectForm" style="display:grid;gap:9px;max-width:520px">
+  <label for="shiprocketEmail">Shiprocket API user email</label><input id="shiprocketEmail" type="email" autocomplete="username" required placeholder="API user email">
+  <label for="shiprocketPassword">Shiprocket API user password</label><input id="shiprocketPassword" type="password" autocomplete="current-password" required minlength="8" placeholder="Enter only when account is ready">
+  <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="shiprocketConnectButton" type="submit">Verify & connect Shiprocket</button><button class="btn secondary" id="shiprocketDisconnectButton" type="button" style="display:none">Disconnect</button></div>
+  <p id="shiprocketMessage" class="muted" role="status" style="font-size:12px">No Shiprocket account is connected yet. Nothing is required until you or a client has an authorized API user.</p>
+ </form>
+</section>
+
 <p class="muted" style="font-size:13px">Record shipments and operational scan updates. Carrier integrations can be connected after provider credentials are available.</p>
 <form id="shipmentCreateForm">
 <div class="sla-grid">
@@ -232,6 +243,15 @@ function renderShipmentChart(shipments){
   row.append(dot,label,value);legend.appendChild(row);
  });
 }
+
+async function loadIntegrations(){
+ const status=document.getElementById('shiprocketStatus');if(!status)return;
+ try{const r=await fetch('/api/integrations',{headers:{'Accept':'application/json'},cache:'no-store'});const d=await r.json();if(!r.ok)throw new Error(d.error||'Could not load integrations');const item=(d.integrations||[]).find(x=>x.provider_code==='shiprocket');const connected=item?.status==='connected';status.textContent=connected?'Shiprocket connected':'Not connected';status.className='pill '+(connected?'good':'');document.getElementById('shiprocketConnected').style.display=connected?'block':'none';document.getElementById('shiprocketDisconnectButton').style.display=connected&&['platform_admin','org_admin'].includes(currentUser?.role)?'inline-flex':'none';document.getElementById('shiprocketConnectButton').textContent=connected?'Replace API credentials':'Verify & connect Shiprocket';}
+ catch(e){status.textContent='Status unavailable';document.getElementById('shiprocketMessage').textContent=e.message;}
+}
+async function connectShiprocket(event){event.preventDefault();const button=document.getElementById('shiprocketConnectButton'),message=document.getElementById('shiprocketMessage');button.disabled=true;message.textContent='Verifying credentials with Shiprocket…';try{const r=await fetch('/api/integrations/shiprocket',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email:document.getElementById('shiprocketEmail').value.trim(),password:document.getElementById('shiprocketPassword').value})});const d=await r.json();if(!r.ok)throw new Error(d.error||'Connection failed');document.getElementById('shiprocketPassword').value='';message.textContent=d.message;await loadIntegrations();}catch(e){message.textContent=e.message;}finally{button.disabled=false;}}
+async function disconnectShiprocket(){if(!confirm('Disconnect Shiprocket and erase its stored API token?'))return;const button=document.getElementById('shiprocketDisconnectButton');button.disabled=true;try{const r=await fetch('/api/integrations/shiprocket',{method:'DELETE',headers:{'Accept':'application/json'}});const d=await r.json();if(!r.ok)throw new Error(d.error||'Disconnect failed');document.getElementById('shiprocketMessage').textContent='Shiprocket disconnected. Stored API token erased.';await loadIntegrations();}catch(e){document.getElementById('shiprocketMessage').textContent=e.message;}finally{button.disabled=false;}}
+
 async function loadShipments(){
  const box=document.getElementById("shipmentList");if(!box)return;
  try{
@@ -444,7 +464,7 @@ async function checkSession(){
   let data=await response.json();
   if(!data.authenticated){response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});data=await response.json();}
   if(response.ok&&data.authenticated){
-   currentUser=data.user||null;configureUserAdmin();document.getElementById('shipmentCreateForm').style.display=shipmentCanEdit()?'block':'none';gate.style.display='none';app.classList.add('authenticated');loadTickets();loadShipments();return;
+   currentUser=data.user||null;configureUserAdmin();document.getElementById('shipmentCreateForm').style.display=shipmentCanEdit()?'block':'none';gate.style.display='none';app.classList.add('authenticated');loadTickets();loadShipments();loadIntegrations();return;
   }
   currentUser=null;document.getElementById('userAdminPanel').style.display='none';
   gate.style.display='block';app.classList.remove('authenticated');
@@ -507,6 +527,8 @@ document.addEventListener('DOMContentLoaded',function(){
  document.getElementById('bootstrapForm').addEventListener('submit',bootstrapAdmin);
  document.getElementById('userCreateForm').addEventListener('submit',createUser);
  document.getElementById('shipmentCreateForm').addEventListener('submit',createShipment);
+ document.getElementById('shiprocketConnectForm').addEventListener('submit',connectShiprocket);
+ document.getElementById('shiprocketDisconnectButton').addEventListener('click',disconnectShiprocket);
  checkSession();
 });
 </script>
