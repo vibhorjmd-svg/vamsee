@@ -125,6 +125,41 @@ export default {
       });
     }
 
+    // Provider-neutral carrier webhook. Configure VAMSEE_WEBHOOK_SECRET as a Worker secret.
+    // Payload: tracking_number, carrier_code, event_status, description, location?, event_time?, event_id?
+    if(request.method==="POST"&&url.pathname==="/api/webhooks/shipment"){
+      if(!env.VAMSEE_WEBHOOK_SECRET||env.VAMSEE_WEBHOOK_SECRET.length<32)return json({error:"Webhook authentication is not configured."},503);
+      const auth=request.headers.get("Authorization")||"";
+      const supplied=auth.startsWith("Bearer ")?auth.slice(7):"";
+      if(!supplied||!(await passwordMatches(supplied,env.VAMSEE_WEBHOOK_SECRET)))return json({error:"Invalid webhook credentials."},401);
+      const raw=await request.text();
+      if(raw.length>32768)return json({error:"Webhook payload is too large."},413);
+      let b;try{b=JSON.parse(raw);}catch{return json({error:"Invalid JSON payload."},400);}
+      const tracking=String(b.tracking_number||"").trim();
+      const carrier=String(b.carrier_code||"").trim().toUpperCase();
+      const status=String(b.event_status||"").trim().toLowerCase();
+      const description=String(b.description||"").trim();
+      const location=String(b.location||"").trim();
+      const eventTime=new Date(b.event_time||Date.now());
+      const allowed=["created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
+      if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status)||!description||description.length>500||location.length>120||!Number.isFinite(eventTime.getTime()))return json({error:"Provide a valid tracking_number, carrier_code, event_status, description, optional location, and event_time."},400);
+      const shipment=await env.DB.prepare("SELECT id,organization_id,carrier_code FROM shipments WHERE organization_id=? AND tracking_number=?").bind(DEMO_ORG_ID,tracking).first();
+      if(!shipment)return json({error:"Shipment not found. Create it in the workspace before sending tracking events."},404);
+      if(shipment.carrier_code&&carrier&&shipment.carrier_code.toUpperCase()!==carrier)return json({error:"Carrier code does not match the registered shipment."},409);
+      const eventCode=String(b.event_id||"").trim().slice(0,120)||null;
+      if(eventCode){
+        const duplicate=await env.DB.prepare("SELECT id FROM shipment_events WHERE shipment_id=? AND event_code=?").bind(shipment.id,eventCode).first();
+        if(duplicate)return json({ok:true,duplicate:true,event_id:duplicate.id});
+      }
+      const iso=eventTime.toISOString(),now=new Date().toISOString(),eventId="evt_"+crypto.randomUUID();
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_code,event_status,description,location,event_time,source,raw_payload_json) VALUES(?,?,?,?,?,?,?,?, 'webhook',?)").bind(eventId,shipment.organization_id,shipment.id,eventCode,status,description,location||null,iso,raw.slice(0,16000)),
+        env.DB.prepare("UPDATE shipments SET carrier_code=COALESCE(carrier_code,?),current_status=?,last_tracking_at=?,last_event_at=?,source='webhook',updated_at=? WHERE id=? AND organization_id=?").bind(carrier||null,status,iso,iso,now,shipment.id,shipment.organization_id),
+        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,'shipment.webhook_received','shipment',?,?)").bind("aud_"+crypto.randomUUID(),shipment.organization_id,shipment.id,JSON.stringify({event_status:status,carrier_code:carrier||null,event_id:eventId}))
+      ]);
+      return json({ok:true,shipment_id:shipment.id,event_id:eventId,status},201);
+    }
+
     if(!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Session signing is not configured."},503);
     if(!env.DB)return json({error:"Database binding DB is not configured."},503);
     const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);
