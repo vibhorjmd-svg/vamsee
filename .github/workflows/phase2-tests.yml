@@ -3,6 +3,7 @@ name: Phase 2 security tests
 on:
   push:
     branches:
+      - main
       - phase2/individual-user-auth
   pull_request:
     branches:
