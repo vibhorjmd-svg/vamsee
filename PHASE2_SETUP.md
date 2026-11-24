@@ -44,9 +44,13 @@ The first account is created as `platform_admin` and is automatically signed in.
 - Individual login: `POST /api/auth/login` with `email` and `password`.
 - Session check: `GET /api/auth/session`.
 - Logout: `POST /api/auth/logout`.
-- Create a user: authenticated administrator sends `POST /api/users` with `email`, `full_name`, `temporary_password` (12+ characters), and `role`. Share the temporary password through a separate secure channel.
-- Supported roles: `platform_admin` (bootstrap only), `org_admin`, `seller_admin`, `seller_operator`, `logistics_manager`, `logistics_agent`, `courier_manager`, `courier_operator`, `viewer`.
+- List workspace users: authenticated administrator requests `GET /api/users` (limited to the current organisation).\n- Create a user: authenticated administrator sends `POST /api/users` with `email`, `full_name`, `temporary_password` (12+ characters), and `role`. Share the temporary password through a separate secure channel.
+- Supported roles: `platform_admin` (bootstrap only), `org_admin`, `seller_admin`, `seller_operator`, `logistics_manager`, `logistics_agent`, `courier_manager`, `courier_operator`, `viewer`. Assignment is restricted by the creator's role: seller admins can create seller operators/viewers; logistics managers can create logistics agents/viewers; courier managers can create courier operators/viewers. Platform and organisation admins have broader but distinct assignment rights.
 
 Passwords are stored as PBKDF2-HMAC-SHA-256 hashes with per-user random salts. Signed, HttpOnly, Secure, SameSite=Strict sessions expire after 8 hours. Membership and organization status are checked against D1 on each authenticated API request. Ticket queries and mutations use the authenticated membership's organization; the browser cannot choose a tenant. Viewer accounts are read-only for ticket operations.
 
 **Deployment gate:** do not use this with real customer data until migration 0002 is confirmed applied remotely, secrets are configured, the Worker is deployed, and the authentication/tenant-isolation checks have passed. This branch is not the live deployment.
+
+
+### Regression checks
+Run `npm test` before merging. The built-in Node test suite checks JavaScript syntax, password hashing, session validation, one-time bootstrap, role assignment boundaries, tenant-scoped queries, and same-origin mutation protection. These are source-level regression checks; live D1 and browser integration tests are still required before production use.
