@@ -47,6 +47,15 @@ async function validSession(request, secret) {
 function sameOrigin(request) {
   return request.headers.get("Origin") === new URL(request.url).origin;
 }
+
+async function encryptIntegrationToken(token, secret){
+  const keyBytes=await crypto.subtle.digest("SHA-256",encoder.encode(secret));
+  const key=await crypto.subtle.importKey("raw",keyBytes,{name:"AES-GCM"},false,["encrypt"]);
+  const nonce=crypto.getRandomValues(new Uint8Array(12));
+  const ciphertext=await crypto.subtle.encrypt({name:"AES-GCM",iv:nonce},key,encoder.encode(token));
+  return {ciphertext:toBase64Url(new Uint8Array(ciphertext)),nonce:toBase64Url(nonce)};
+}
+
 async function passwordMatches(candidate, expected) {
   const [a, b] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(candidate)),
@@ -169,6 +178,35 @@ export default {
     const organizationId=member.organization_id, role=member.role;
     const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
+
+
+    if(request.method==="GET"&&url.pathname==="/api/integrations"){
+      const rows=await env.DB.prepare("SELECT provider_code,display_name,status,last_checked_at,last_error,updated_at FROM api_integrations WHERE organization_id=? ORDER BY display_name").bind(organizationId).all();
+      return json({integrations:rows.results||[]});
+    }
+    if(request.method==="POST"&&url.pathname==="/api/integrations/shiprocket"){
+      if(!canManage)return json({error:"Only workspace administrators can connect integrations."},403);
+      if(!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Secure integration encryption is not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim(),password=typeof b.password==="string"?b.password:"";
+      if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||email.length>254||password.length<8||password.length>256)return json({error:"Enter the Shiprocket API user email and password."},400);
+      let apiResponse,apiData;
+      try{
+        apiResponse=await fetch("https://apiv2.shiprocket.in/v1/external/auth/login",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({email,password})});
+        apiData=await apiResponse.json();
+      }catch{return json({error:"Could not reach Shiprocket authentication. Try again later."},502);}
+      const token=typeof apiData?.token==="string"?apiData.token:"";
+      if(!apiResponse.ok||!token)return json({error:"Shiprocket rejected these API credentials. Check the API user details and access."},401);
+      const sealed=await encryptIntegrationToken(token,env.VAMSEE_SESSION_SECRET),now=new Date().toISOString();
+      await env.DB.prepare("INSERT INTO api_integrations(id,organization_id,provider_code,integration_type,display_name,status,credentials_ciphertext,credentials_nonce,config_json,last_checked_at,last_error,updated_at) VALUES(?,?, 'shiprocket','aggregator','Shiprocket','connected',?,?, '{}',?,NULL,?) ON CONFLICT(organization_id,provider_code,integration_type) DO UPDATE SET status='connected',credentials_ciphertext=excluded.credentials_ciphertext,credentials_nonce=excluded.credentials_nonce,last_checked_at=excluded.last_checked_at,last_error=NULL,updated_at=excluded.updated_at").bind("int_"+crypto.randomUUID(),organizationId,sealed.ciphertext,sealed.nonce,now,now).run();
+      await env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'integration.connected','integration','shiprocket',?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,JSON.stringify({provider:"shiprocket"})).run();
+      return json({ok:true,provider:"shiprocket",status:"connected",message:"Shiprocket API credentials verified and access token stored encrypted."},201);
+    }
+    if(request.method==="DELETE"&&url.pathname==="/api/integrations/shiprocket"){
+      if(!canManage)return json({error:"Only workspace administrators can disconnect integrations."},403);
+      await env.DB.prepare("UPDATE api_integrations SET status='disabled',credentials_ciphertext=NULL,credentials_nonce=NULL,last_error=NULL,updated_at=? WHERE organization_id=? AND provider_code='shiprocket' AND integration_type='aggregator'").bind(new Date().toISOString(),organizationId).run();
+      return json({ok:true,status:"disabled"});
+    }
 
     if(request.method==="GET"&&url.pathname==="/api/users"){
       if(!member||!canManage)return json({error:"Only workspace administrators can view users."},403);
