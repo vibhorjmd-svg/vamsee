@@ -430,7 +430,7 @@ async function bootstrapAdmin(event){
   try{data=rawResponse?JSON.parse(rawResponse):{};}catch(parseError){
    throw new Error('Setup API returned HTTP '+response.status+' with a non-JSON response: '+rawResponse.slice(0,180));
   }
-  if(!response.ok)throw new Error(data.error||('Owner account setup failed (HTTP '+response.status+').'));
+  if(!response.ok){const d=data.diagnostics;const missing=d?Object.entries(d).filter(([k,v])=>v===false).map(([k])=>k).join(', '):'';throw new Error((data.error||('Owner account setup failed (HTTP '+response.status+').'))+(missing?' Missing/invalid: '+missing+'.':''));}
   document.getElementById('bootstrapToken').value='';
   document.getElementById('bootstrapPassword').value='';
   await checkSession();
