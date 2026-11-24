@@ -43,69 +43,75 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </div>
 <p class="note">Demo notice: This dashboard saves test enquiries to the VAMSEE database. Classification is rule-based; replies are drafts for human review. Authentication is not yet enabled—do not enter real customer or confidential data.</p>
 </main>
-function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-function renderTickets(tickets){
- const q=document.getElementById('queue');
- q.replaceChildren();
- if(!tickets.length){q.innerHTML='<p class="muted">No tickets yet. Submit a shipment enquiry to create the first one.</p>';}
- tickets.forEach(t=>{
-  const el=document.createElement('div');el.className='ticket';
-  const priorityClass=t.priority==='HIGH'?'urgent':t.priority==='MEDIUM'?'medium':'';
-  const statuses=['OPEN','IN_PROGRESS','RESOLVED'];
-  el.innerHTML=`<div class="tickethead"><b>${escapeHTML(t.id)} · ${escapeHTML(t.issue_type)}</b><span class="pill ${priorityClass}">${escapeHTML(t.priority)}</span></div><p>${escapeHTML(t.customer_name)} · ${escapeHTML(t.tracking_number)}</p><p>${escapeHTML(t.message||'')}</p><span class="pill">${escapeHTML(t.assigned_queue)}</span><p>Next action: ${escapeHTML(t.next_action)}</p><label>Status</label><select aria-label="Ticket status" data-ticket-id="${escapeHTML(t.id)}">${statuses.map(s=>`<option value="${s}" ${t.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select>`;
-  const select=el.querySelector('select');
-  select.addEventListener('change',()=>updateTicketStatus(t.id,select.value,select));
-  q.appendChild(el);
+<script>
+let latestReply='';
+const configs={
+ delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review immediately',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check with the carrier for the latest movement status.\n\nWe’ll share an update as soon as the shipment status is confirmed. Thank you for your patience.\n\nVAMSEE Support'},
+ tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\n\nThanks for contacting us about shipment '+t+'. Tracking events can sometimes take time to appear after a carrier scan. We’ve marked this for a tracking-status check and recommend reviewing the next scan update.\n\nWe’ll keep you informed if the status remains unchanged.\n\nVAMSEE Support'},
+ delivery:{priority:'HIGH',team:'Proof-of-delivery investigation',sla:'Escalate for delivery proof',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry to hear that shipment '+t+' is marked delivered but has not reached you. We’ve flagged this for an urgent proof-of-delivery investigation with the delivery team.\n\nPlease confirm whether anyone else at the delivery address may have accepted it. We’ll investigate and update you.\n\nVAMSEE Support'},
+ address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\n\nWe’ve received your address correction request for shipment '+t+'. Our team needs to verify whether the parcel is still eligible for an address update before dispatch or final-mile processing.\n\nPlease share the corrected address through the verified support channel.\n\nVAMSEE Support'},
+ damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request photos and escalate',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry the parcel associated with shipment '+t+' appears to be damaged. We’ve flagged this for our claims team. Please keep the packaging and item, and share clear photos of the outer packaging, shipping label and damaged item through the verified support channel.\n\nOur team will review the details and guide you on the next steps.\n\nVAMSEE Support'}
+};
+function escapeHTML(value){
+ return String(value == null ? '' : value).replace(/[&<>"']/g,function(ch){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
  });
- const total=tickets.length, high=tickets.filter(t=>t.priority==='HIGH'&&t.status!=='RESOLVED').length, routine=tickets.filter(t=>t.priority!=='HIGH').length;
- document.getElementById('total').textContent=String(total).padStart(2,'0');
- document.getElementById('urgent').textContent=String(high).padStart(2,'0');
- document.getElementById('resolved').textContent=String(routine).padStart(2,'0');
+}
+function renderTickets(tickets){
+ const q=document.getElementById('queue');q.replaceChildren();
+ if(!tickets.length)q.innerHTML='<p class="muted">No tickets yet. Submit a shipment enquiry to create the first one.</p>';
+ tickets.forEach(function(ticket){
+  const el=document.createElement('div');el.className='ticket';
+  const pc=ticket.priority==='HIGH'?'urgent':ticket.priority==='MEDIUM'?'medium':'';
+  const statuses=['OPEN','IN_PROGRESS','RESOLVED'];
+  el.innerHTML='<div class="tickethead"><b>'+escapeHTML(ticket.id)+' · '+escapeHTML(ticket.issue_type)+'</b><span class="pill '+pc+'">'+escapeHTML(ticket.priority)+'</span></div><p>'+escapeHTML(ticket.customer_name)+' · '+escapeHTML(ticket.tracking_number)+'</p><p>'+escapeHTML(ticket.message||'')+'</p><span class="pill">'+escapeHTML(ticket.assigned_queue)+'</span><p>Next action: '+escapeHTML(ticket.next_action)+'</p><label>Status</label><select aria-label="Ticket status">'+statuses.map(function(s){return '<option value="'+s+'" '+(ticket.status===s?'selected':'')+'>'+s.replace('_',' ')+'</option>';}).join('')+'</select>';
+  const select=el.querySelector('select');select.addEventListener('change',function(){updateTicketStatus(ticket.id,select.value,select);});q.appendChild(el);
+ });
+ document.getElementById('total').textContent=String(tickets.length).padStart(2,'0');
+ document.getElementById('urgent').textContent=String(tickets.filter(function(t){return t.priority==='HIGH'&&t.status!=='RESOLVED';}).length).padStart(2,'0');
+ document.getElementById('resolved').textContent=String(tickets.filter(function(t){return t.priority!=='HIGH';}).length).padStart(2,'0');
 }
 async function loadTickets(){
- const q=document.getElementById('queue');
+ const q=document.getElementById('queue');q.innerHTML='<p class="muted">Loading live tickets…</p>';
  try{
-  const response=await fetch('/api/tickets');
+  const response=await fetch('/api/tickets',{headers:{'Accept':'application/json'},cache:'no-store'});
   const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Could not load tickets');
-  renderTickets(data.tickets||[]);
- }catch(error){q.innerHTML='<p class="muted">Unable to load live tickets: '+escapeHTML(error.message)+'</p>';}
+  if(!response.ok)throw new Error(data.error||'Could not load tickets (HTTP '+response.status+')');
+  if(!Array.isArray(data.tickets))throw new Error('Unexpected response from ticket API');
+  renderTickets(data.tickets);
+ }catch(error){
+  q.innerHTML='<p class="muted">Unable to load live tickets: '+escapeHTML(error.message)+'</p><button class="btn secondary" type="button" onclick="loadTickets()">Retry</button>';
+ }
 }
 async function updateTicketStatus(id,status,select){
  select.disabled=true;
  try{
-  const response=await fetch('/api/tickets/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Status update failed');
-  await loadTickets();
+  const response=await fetch('/api/tickets/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({status:status})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'Status update failed');await loadTickets();
  }catch(error){alert('Could not update ticket: '+error.message);select.disabled=false;}
 }
 async function processTicket(){
- const n=document.getElementById('customer').value.trim()||'Customer', t=document.getElementById('tracking').value.trim()||'Not provided', key=document.getElementById('issue').value, msg=document.getElementById('message').value.trim(), c=configs[key];
- latestReply=c.reply(n,t).replaceAll(String.fromCharCode(92)+'n',String.fromCharCode(10));
- document.getElementById('classification').innerHTML=`<span class="pill ${c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':''}">${c.priority} PRIORITY</span><span class="pill">${key.toUpperCase()}</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>${escapeHTML(c.team)}</b> · Next action: ${escapeHTML(c.sla)}</p>`;
+ const n=document.getElementById('customer').value.trim()||'Customer';
+ const t=document.getElementById('tracking').value.trim()||'Not provided';
+ const key=document.getElementById('issue').value,msg=document.getElementById('message').value.trim(),c=configs[key];
+ latestReply=c.reply(n,t);
+ document.getElementById('classification').innerHTML='<span class="pill '+(c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':'')+'">'+c.priority+' PRIORITY</span><span class="pill">'+escapeHTML(key.toUpperCase())+'</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>'+escapeHTML(c.team)+'</b> · Next action: '+escapeHTML(c.sla)+'</p>';
  document.getElementById('reply').textContent=latestReply;
- document.getElementById('actions').innerHTML=`<span class="step">1 · Categorised</span><span class="step">2 · Draft prepared</span><span class="step">3 · ${c.priority==='HIGH'?'Escalation flagged':'Routine queue'}</span>`;
+ document.getElementById('actions').innerHTML='<span class="step">1 · Categorised</span><span class="step">2 · Draft prepared</span><span class="step">3 · '+(c.priority==='HIGH'?'Escalation flagged':'Routine queue')+'</span>';
  document.getElementById('result').style.display='block';
- const button=document.querySelector('button[onclick="processTicket()"]');
- button.disabled=true;button.textContent='Saving enquiry…';
+ const button=document.querySelector('button[onclick="processTicket()"]');button.disabled=true;button.textContent='Saving enquiry…';
  try{
   const id='VAM-'+Date.now();
-  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
-  const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Ticket could not be saved');
-  document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="step">Saved to VAMSEE database · '+escapeHTML(data.id)+'</span>');
-  await loadTickets();
- }catch(error){
-  document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="pill urgent">Save failed: '+escapeHTML(error.message)+'</span>');
- }finally{button.disabled=false;button.textContent='Process enquiry';}
+  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({id:id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||'Ticket could not be saved');
+  document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="step">Saved to VAMSEE database · '+escapeHTML(data.id)+'</span>');await loadTickets();
+ }catch(error){document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="pill urgent">Save failed: '+escapeHTML(error.message)+'</span>');}
+ finally{button.disabled=false;button.textContent='Process enquiry';}
 }
-
 function copyReply(){
- if(!latestReply) return;
- if(navigator.clipboard && navigator.clipboard.writeText){
-  navigator.clipboard.writeText(latestReply).then(function(){alert('Response copied.');}).catch(function(){alert('Copy is unavailable in this browser.');});
- }else alert('Copy is unavailable in this browser.');
+ if(!latestReply)return;
+ if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(latestReply).then(function(){alert('Response copied.');}).catch(function(){alert('Copy is unavailable in this browser.');});
+ else alert('Copy is unavailable in this browser.');
 }
 document.addEventListener('DOMContentLoaded',loadTickets);
 </script>
