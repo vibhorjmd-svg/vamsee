@@ -72,6 +72,7 @@ export default {
       if(!env.DB||!env.VAMSEE_BOOTSTRAP_TOKEN||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Bootstrap secrets or database are not configured."},503);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
       if(typeof b.token!=="string"||!(await passwordMatches(b.token,env.VAMSEE_BOOTSTRAP_TOKEN)))return json({error:"Invalid setup token."},401);
+      try {
       const count=await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();if(Number(count?.n||0)!==0)return json({error:"Initial setup is already complete."},409);
       const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.password==="string"?b.password:"";
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128)return json({error:"Enter a valid email, full name and a 12–128 character password."},400);
@@ -84,6 +85,10 @@ export default {
       if(!setup?.[1]?.meta?.changes)return json({error:"Initial setup has already been completed."},409);
       const t=await userToken({user_id:id,organization_id:DEMO_ORG_ID},env.VAMSEE_SESSION_SECRET);
       return json({ok:true,user:{id,email,full_name:name,role:"platform_admin"}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+      } catch(error) {
+        console.error("VAMSEE owner bootstrap failed", error);
+        return json({error:"Owner setup failed: "+String(error?.message||error).slice(0,240)},500);
+      }
     }
     if(url.pathname==="/api/auth/login"&&request.method==="POST"){
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
