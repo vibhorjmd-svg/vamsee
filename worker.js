@@ -93,6 +93,10 @@ export default {
       const t=await userToken({user_id:u.id,organization_id:u.organization_id},env.VAMSEE_SESSION_SECRET);
       return json({ok:true,user:{id:u.id,email:u.email,full_name:u.full_name,role:u.role}},200,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
     }
+    if(url.pathname==="/api/auth/logout"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      return json({ok:true},200,{"Set-Cookie":USER_SESSION_COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"});
+    }
     if(url.pathname==="/api/auth/session"&&request.method==="GET"){
       const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);if(!p||!env.DB)return json({authenticated:false});
       const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first();
