@@ -48,22 +48,6 @@ function sameOrigin(request) {
   return request.headers.get("Origin") === new URL(request.url).origin;
 }
 
-async function encryptIntegrationToken(token, secret){
-  const keyBytes=await crypto.subtle.digest("SHA-256",encoder.encode(secret));
-  const key=await crypto.subtle.importKey("raw",keyBytes,{name:"AES-GCM"},false,["encrypt"]);
-  const nonce=crypto.getRandomValues(new Uint8Array(12));
-  const ciphertext=await crypto.subtle.encrypt({name:"AES-GCM",iv:nonce},key,encoder.encode(token));
-  return {ciphertext:toBase64Url(new Uint8Array(ciphertext)),nonce:toBase64Url(nonce)};
-}
-
-
-async function decryptIntegrationToken(ciphertext,nonce,secret){
- const keyBytes=await crypto.subtle.digest("SHA-256",encoder.encode(secret));
- const key=await crypto.subtle.importKey("raw",keyBytes,{name:"AES-GCM"},false,["decrypt"]);
- const plain=await crypto.subtle.decrypt({name:"AES-GCM",iv:decode64url(nonce)},key,decode64url(ciphertext));
- return new TextDecoder().decode(plain);
-}
-
 async function passwordMatches(candidate, expected) {
   const [a, b] = await Promise.all([
     crypto.subtle.digest("SHA-256", encoder.encode(candidate)),
@@ -142,41 +126,6 @@ export default {
       });
     }
 
-    // Provider-neutral carrier webhook. Configure VAMSEE_WEBHOOK_SECRET as a Worker secret.
-    // Payload: tracking_number, carrier_code, event_status, description, location?, event_time?, event_id?
-    if(request.method==="POST"&&url.pathname==="/api/webhooks/shipment"){
-      if(!env.VAMSEE_WEBHOOK_SECRET||env.VAMSEE_WEBHOOK_SECRET.length<32)return json({error:"Webhook authentication is not configured."},503);
-      const auth=request.headers.get("Authorization")||"";
-      const supplied=auth.startsWith("Bearer ")?auth.slice(7):"";
-      if(!supplied||!(await passwordMatches(supplied,env.VAMSEE_WEBHOOK_SECRET)))return json({error:"Invalid webhook credentials."},401);
-      const raw=await request.text();
-      if(raw.length>32768)return json({error:"Webhook payload is too large."},413);
-      let b;try{b=JSON.parse(raw);}catch{return json({error:"Invalid JSON payload."},400);}
-      const tracking=String(b.tracking_number||"").trim();
-      const carrier=String(b.carrier_code||"").trim().toUpperCase();
-      const status=String(b.event_status||"").trim().toLowerCase();
-      const description=String(b.description||"").trim();
-      const location=String(b.location||"").trim();
-      const eventTime=new Date(b.event_time||Date.now());
-      const allowed=["created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
-      if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status)||!description||description.length>500||location.length>120||!Number.isFinite(eventTime.getTime()))return json({error:"Provide a valid tracking_number, carrier_code, event_status, description, optional location, and event_time."},400);
-      const shipment=await env.DB.prepare("SELECT id,organization_id,carrier_code FROM shipments WHERE organization_id=? AND tracking_number=?").bind(DEMO_ORG_ID,tracking).first();
-      if(!shipment)return json({error:"Shipment not found. Create it in the workspace before sending tracking events."},404);
-      if(shipment.carrier_code&&carrier&&shipment.carrier_code.toUpperCase()!==carrier)return json({error:"Carrier code does not match the registered shipment."},409);
-      const eventCode=String(b.event_id||"").trim().slice(0,120)||null;
-      if(eventCode){
-        const duplicate=await env.DB.prepare("SELECT id FROM shipment_events WHERE shipment_id=? AND event_code=?").bind(shipment.id,eventCode).first();
-        if(duplicate)return json({ok:true,duplicate:true,event_id:duplicate.id});
-      }
-      const iso=eventTime.toISOString(),now=new Date().toISOString(),eventId="evt_"+crypto.randomUUID();
-      await env.DB.batch([
-        env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_code,event_status,description,location,event_time,source,raw_payload_json) VALUES(?,?,?,?,?,?,?,?, 'webhook',?)").bind(eventId,shipment.organization_id,shipment.id,eventCode,status,description,location||null,iso,raw.slice(0,16000)),
-        env.DB.prepare("UPDATE shipments SET carrier_code=COALESCE(carrier_code,?),current_status=?,last_tracking_at=?,last_event_at=?,source='webhook',updated_at=? WHERE id=? AND organization_id=?").bind(carrier||null,status,iso,iso,now,shipment.id,shipment.organization_id),
-        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,'shipment.webhook_received','shipment',?,?)").bind("aud_"+crypto.randomUUID(),shipment.organization_id,shipment.id,JSON.stringify({event_status:status,carrier_code:carrier||null,event_id:eventId}))
-      ]);
-      return json({ok:true,shipment_id:shipment.id,event_id:eventId,status},201);
-    }
-
     if(!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Session signing is not configured."},503);
     if(!env.DB)return json({error:"Database binding DB is not configured."},503);
     const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);
@@ -187,65 +136,6 @@ export default {
     const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
 
-
-    if(request.method==="GET"&&url.pathname==="/api/integrations"){
-      const rows=await env.DB.prepare("SELECT provider_code,display_name,status,last_checked_at,last_error,updated_at FROM api_integrations WHERE organization_id=? ORDER BY display_name").bind(organizationId).all();
-      return json({integrations:rows.results||[]});
-    }
-    if(request.method==="POST"&&url.pathname==="/api/integrations/shiprocket"){
-      if(!canManage)return json({error:"Only workspace administrators can connect integrations."},403);
-      if(!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Secure integration encryption is not configured."},503);
-      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
-      const email=String(b.email||"").trim(),password=typeof b.password==="string"?b.password:"";
-      if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||email.length>254||password.length<8||password.length>256)return json({error:"Enter the Shiprocket API user email and password."},400);
-      let apiResponse,apiData;
-      try{
-        apiResponse=await fetch("https://apiv2.shiprocket.in/v1/external/auth/login",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({email,password})});
-        apiData=await apiResponse.json();
-      }catch{return json({error:"Could not reach Shiprocket authentication. Try again later."},502);}
-      const token=typeof apiData?.token==="string"?apiData.token:"";
-      if(!apiResponse.ok||!token)return json({error:"Shiprocket rejected these API credentials. Check the API user details and access."},401);
-      const sealed=await encryptIntegrationToken(token,env.VAMSEE_SESSION_SECRET),now=new Date().toISOString();
-      await env.DB.prepare("INSERT INTO api_integrations(id,organization_id,provider_code,integration_type,display_name,status,credentials_ciphertext,credentials_nonce,config_json,last_checked_at,last_error,updated_at) VALUES(?,?, 'shiprocket','aggregator','Shiprocket','connected',?,?, '{}',?,NULL,?) ON CONFLICT(organization_id,provider_code,integration_type) DO UPDATE SET status='connected',credentials_ciphertext=excluded.credentials_ciphertext,credentials_nonce=excluded.credentials_nonce,last_checked_at=excluded.last_checked_at,last_error=NULL,updated_at=excluded.updated_at").bind("int_"+crypto.randomUUID(),organizationId,sealed.ciphertext,sealed.nonce,now,now).run();
-      await env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'integration.connected','integration','shiprocket',?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,JSON.stringify({provider:"shiprocket"})).run();
-      return json({ok:true,provider:"shiprocket",status:"connected",message:"Shiprocket API credentials verified and access token stored encrypted."},201);
-    }
-
-    if(request.method==="POST"&&url.pathname==="/api/integrations/shiprocket/sync"){
-      if(!canOperate)return json({error:"Your role cannot sync shipment tracking."},403);
-      const integration=await env.DB.prepare("SELECT credentials_ciphertext,credentials_nonce FROM api_integrations WHERE organization_id=? AND provider_code='shiprocket' AND integration_type='aggregator' AND status='connected'").bind(organizationId).first();
-      if(!integration?.credentials_ciphertext||!integration?.credentials_nonce)return json({error:"Shiprocket is not connected for this workspace."},409);
-      let token;try{token=await decryptIntegrationToken(integration.credentials_ciphertext,integration.credentials_nonce,env.VAMSEE_SESSION_SECRET);}catch{return json({error:"Stored Shiprocket token could not be decrypted. Reconnect the account."},500);}
-      const rows=await env.DB.prepare("SELECT id,tracking_number FROM shipments WHERE organization_id=? AND tracking_number IS NOT NULL AND TRIM(tracking_number)<>'' AND current_status NOT IN ('delivered','returned') ORDER BY updated_at DESC LIMIT 50").bind(organizationId).all();
-      const shipments=rows.results||[];if(!shipments.length)return json({ok:true,checked:0,updated:0,events:0,message:"No active shipments with AWB numbers are available to sync."});
-      const awbs=shipments.map(s=>String(s.tracking_number).trim());
-      let response,data;try{response=await fetch("https://apiv2.shiprocket.in/v1/external/courier/track/awbs",{method:"POST",headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({awbs})});data=await response.json();}catch{return json({error:"Could not reach Shiprocket tracking API."},502);}
-      if(!response.ok)return json({error:"Shiprocket tracking request failed.",provider_status:response.status,details:String(data?.message||data?.status||"Provider rejected the request").slice(0,240)},502);
-      let updated=0,eventCount=0,skipped=0;
-      const statusMap=(s)=>{const v=String(s||"").toLowerCase();if(v.includes("delivered"))return "delivered";if(v.includes("out for delivery"))return "out_for_delivery";if(v.includes("picked")||v.includes("pickup"))return "picked_up";if(v.includes("transit")||v.includes("hub")||v.includes("reached"))return "in_transit";if(v.includes("rto")||v.includes("return"))return "returned";if(v.includes("exception")||v.includes("undelivered")||v.includes("lost")||v.includes("damage")||v.includes("cancel"))return "exception";if(v.includes("manifest")||v.includes("awb assigned")||v.includes("shipped"))return "created";return null;};
-      for(const shipment of shipments){
-        const item=data?.[shipment.tracking_number]?.tracking_data||data?.[String(shipment.tracking_number)]?.tracking_data;
-        if(!item){skipped++;continue;}
-        const track=Array.isArray(item.shipment_track)?item.shipment_track[0]:null;
-        const activities=Array.isArray(item.shipment_track_activities)?item.shipment_track_activities:[];
-        const current=track?.current_status||item.current_status||"";const mapped=statusMap(current);
-        if(mapped){const now=new Date().toISOString();await env.DB.prepare("UPDATE shipments SET current_status=?,last_tracking_at=COALESCE(?,last_tracking_at),last_event_at=COALESCE(?,last_event_at),source='aggregator_api',aggregator_code='shiprocket',updated_at=? WHERE id=? AND organization_id=?").bind(mapped,track?.delivered_date||null,activities[0]?.date?new Date(activities[0].date).toISOString():null,now,shipment.id,organizationId).run();updated++;}
-        for(const activity of activities.slice(0,20).reverse()){
-          const description=String(activity.activity||activity.status||"Shiprocket tracking update").slice(0,500),loc=String(activity.location||"").slice(0,120),dt=new Date(activity.date||Date.now());if(!Number.isFinite(dt.getTime()))continue;
-          const eventCode="sr:"+String(shipment.tracking_number)+":"+dt.toISOString()+":"+description.slice(0,80);
-          const exists=await env.DB.prepare("SELECT id FROM shipment_events WHERE shipment_id=? AND event_code=?").bind(shipment.id,eventCode).first();if(exists)continue;
-          await env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_code,event_status,description,location,event_time,source,raw_payload_json) VALUES(?,?,?,?,?,?,?,?, 'aggregator_api',?)").bind("evt_"+crypto.randomUUID(),organizationId,shipment.id,eventCode,statusMap(description)||mapped||"in_transit",description,loc||null,dt.toISOString(),JSON.stringify(activity).slice(0,4000)).run();eventCount++;
-        }
-      }
-      await env.DB.prepare("UPDATE api_integrations SET last_checked_at=?,last_error=NULL,updated_at=? WHERE organization_id=? AND provider_code='shiprocket' AND integration_type='aggregator'").bind(new Date().toISOString(),new Date().toISOString(),organizationId).run();
-      return json({ok:true,checked:shipments.length,updated,events:eventCount,skipped,message:"Shiprocket tracking sync completed."});
-    }
-
-    if(request.method==="DELETE"&&url.pathname==="/api/integrations/shiprocket"){
-      if(!canManage)return json({error:"Only workspace administrators can disconnect integrations."},403);
-      await env.DB.prepare("UPDATE api_integrations SET status='disabled',credentials_ciphertext=NULL,credentials_nonce=NULL,last_error=NULL,updated_at=? WHERE organization_id=? AND provider_code='shiprocket' AND integration_type='aggregator'").bind(new Date().toISOString(),organizationId).run();
-      return json({ok:true,status:"disabled"});
-    }
 
     if(request.method==="GET"&&url.pathname==="/api/users"){
       if(!member||!canManage)return json({error:"Only workspace administrators can view users."},403);
@@ -429,6 +319,29 @@ Return only JSON.`;
         ]);
       }catch(error){if(String(error.message||"").includes("UNIQUE"))return json({error:"That tracking number already exists in this workspace."},409);throw error;}
       return json({ok:true,id},201);
+    }
+    if(request.method==="POST"&&url.pathname==="/api/shipments/import"){
+      if(!canOperate)return json({error:"Your role cannot import shipments."},403);
+      let body;try{body=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const rows=body?.shipments;
+      if(!Array.isArray(rows)||rows.length<1||rows.length>200)return json({error:"Upload between 1 and 200 shipment rows per import."},400);
+      const allowed=["unknown","created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
+      const now=new Date().toISOString(),seen=new Set(),statements=[];
+      for(const row of rows){
+        const tracking=String(row?.tracking_number||"").trim();
+        const carrier=String(row?.carrier_code||"").trim().toUpperCase();
+        const status=String(row?.current_status||"unknown").trim().toLowerCase();
+        const eventDate=row?.last_tracking_at?new Date(row.last_tracking_at):null;
+        const external=String(row?.external_reference||"").trim();
+        if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status)||(row?.last_tracking_at&&(!eventDate||!Number.isFinite(eventDate.getTime())))||external.length>120)
+          return json({error:"One or more rows contain invalid tracking number, carrier, status, date, or reference."},400);
+        const key=tracking.toLowerCase();if(seen.has(key))return json({error:"Duplicate tracking number in this upload: "+tracking},400);seen.add(key);
+        const iso=eventDate?eventDate.toISOString():null;
+        statements.push(env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'manual',?,?,?) ON CONFLICT(organization_id,tracking_number) DO UPDATE SET carrier_code=COALESCE(excluded.carrier_code,shipments.carrier_code),current_status=excluded.current_status,last_tracking_at=COALESCE(excluded.last_tracking_at,shipments.last_tracking_at),last_event_at=COALESCE(excluded.last_event_at,shipments.last_event_at),external_reference=COALESCE(excluded.external_reference,shipments.external_reference),source='manual',updated_at=excluded.updated_at").bind("shp_"+crypto.randomUUID(),organizationId,tracking,carrier||null,status,iso,iso,external||null,now,now));
+      }
+      for(let i=0;i<statements.length;i+=40)await env.DB.batch(statements.slice(i,i+40));
+      await env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'shipments.csv_imported','shipment','bulk',?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,JSON.stringify({rows:rows.length})).run();
+      return json({ok:true,imported:rows.length,updated_or_created:rows.length});
     }
     const eventMatch=url.pathname.match(/^\/api\/shipments\/([^/]+)\/events$/);
     if(request.method==="GET"&&eventMatch){
