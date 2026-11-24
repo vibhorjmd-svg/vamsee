@@ -46,6 +46,10 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <div class="metric"><strong id="slaRisk">00</strong><small>At risk (75% of target)</small></div>
 <div class="metric"><strong id="slaCompliance">—</strong><small>Resolved within SLA</small></div>
 </div>
+<div class="sla-grid" style="margin-top:12px">
+<div class="metric"><strong id="stagnantCount">00</strong><small>Shipments without movement for 24h+</small></div>
+<div class="metric"><strong id="monitoredCount">00</strong><small>Shipments with tracking timestamps</small></div>
+</div>
 </section>
 <div class="grid">
 <section class="panel">
@@ -53,6 +57,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <label for="customer">Customer name</label><input id="customer" value="Aarav Mehta">
 <label for="tracking">Tracking / AWB number</label><input id="tracking" value="VMS-20481">
 <label for="issue">Enquiry type</label><select id="issue"><option value="delay">Shipment delayed</option><option value="tracking">Tracking not updated</option><option value="delivery">Marked delivered, not received</option><option value="address">Address correction request</option><option value="damage">Parcel damaged</option></select>
+<label for="lastTrackingAt">Last tracking movement (optional)</label><input id="lastTrackingAt" type="datetime-local" aria-describedby="trackingHelp"><p id="trackingHelp" class="muted" style="font-size:12px;margin:4px 0">Enter the date and time of the most recent carrier scan. Shipments with no movement for over 24 hours will be flagged.</p>
 <label for="message">Customer message</label><textarea id="message">My shipment has not moved for 3 days. Please check and update me.</textarea>
 <button class="btn" onclick="processTicket()">Process enquiry</button>
 <div class="result" id="result" aria-live="polite">
@@ -64,7 +69,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </section>
 <section class="panel">
 <h2>2. Operations queue</h2>
-<p class="muted" style="margin-top:-8px;font-size:13px">Live tickets loaded from the VAMSEE database. HIGH-priority tickets older than 4 hours are auto-escalated when this dashboard loads or refreshes.</p>
+<p class="muted" style="margin-top:-8px;font-size:13px">Live tickets loaded from the VAMSEE database. HIGH-priority tickets older than 4 hours are auto-escalated on load/refresh. Shipments with a recorded carrier scan older than 24 hours are flagged separately.</p>
 <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin:12px 0">
 <input id="ticketSearch" type="search" placeholder="Search customer, AWB or ticket" aria-label="Search tickets">
 <select id="priorityFilter" aria-label="Filter by priority"><option value="">All priorities</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="NORMAL">Normal</option></select>
@@ -111,6 +116,12 @@ function formatHours(hours){
  if(hours<48)return hours.toFixed(1)+'h';
  return (hours/24).toFixed(1)+'d';
 }
+function shipmentMovement(ticket,now){
+ const last=Date.parse(ticket.last_tracking_at||'');
+ if(!Number.isFinite(last))return {state:'unknown',hours:null};
+ const hours=Math.max(0,(now-last)/3600000);
+ return {state:hours>=24?'stagnant':'moving',hours};
+}
 function renderSlaMetrics(){
  const now=Date.now(),active=allTickets.filter(t=>t.status!=='RESOLVED').map(t=>ticketSla(t,now));
  const overdue=active.filter(s=>s.state==='breach').length;
@@ -120,6 +131,9 @@ function renderSlaMetrics(){
  document.getElementById('slaOverdue').textContent=String(overdue).padStart(2,'0');
  document.getElementById('slaRisk').textContent=String(atRisk).padStart(2,'0');
  document.getElementById('slaCompliance').textContent=resolved.length?Math.round(compliant/resolved.length*100)+'%':'—';
+ const monitored=allTickets.filter(t=>t.last_tracking_at&&t.status!=='RESOLVED');
+ document.getElementById('stagnantCount').textContent=String(monitored.filter(t=>shipmentMovement(t,now).state==='stagnant').length).padStart(2,'0');
+ document.getElementById('monitoredCount').textContent=String(monitored.length).padStart(2,'0');
 }
 function renderTickets(tickets){
  allTickets=Array.isArray(tickets)?tickets:[];
@@ -152,12 +166,14 @@ function applyTicketFilters(){
   const autoEscalated=ticket.assigned_queue==='Priority Escalations';
   const created=ticket.created_at?new Date(ticket.created_at).toLocaleString():'';
   const sla=ticketSla(ticket,Date.now());
+  const movement=shipmentMovement(ticket,Date.now());
   const slaClass=sla.state==='breach'||sla.state==='resolved-late'?'breach':sla.state==='risk'?'risk':sla.state==='unknown'?'':'good';
   const slaDetail=sla.elapsed===null?'':(' · '+formatHours(sla.elapsed)+' / '+sla.target+'h target');
   el.innerHTML='<div class="tickethead"><b>'+escapeHTML(ticket.id)+' · '+escapeHTML(ticket.issue_type)+'</b><span class="pill '+pc+'">'+escapeHTML(ticket.priority)+'</span></div>'+
    (escalation?'<span class="pill urgent">REVIEW REQUIRED</span>':'')+
    (autoEscalated?'<span class="pill auto">AUTO-ESCALATED</span>':'')+
    '<span class="pill '+slaClass+'">SLA: '+escapeHTML(sla.label)+escapeHTML(slaDetail)+'</span>'+
+   (movement.state==='stagnant'?'<span class="pill urgent">SHIPMENT STAGNANT · '+escapeHTML(formatHours(movement.hours))+'</span>':movement.state==='moving'?'<span class="pill good">TRACKING UPDATED · '+escapeHTML(formatHours(movement.hours))+' AGO</span>':'')+
    '<p>'+escapeHTML(ticket.customer_name)+' · '+escapeHTML(ticket.tracking_number)+'</p>'+
    '<p>'+escapeHTML(ticket.message||'')+'</p>'+
    '<span class="pill">'+escapeHTML(ticket.assigned_queue)+'</span>'+
@@ -219,7 +235,7 @@ async function processTicket(){
  button.textContent='Saving enquiry…';
  try{
   const id='VAM-'+Date.now();
-  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({id:id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
+  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({id:id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,last_tracking_at:document.getElementById('lastTrackingAt').value?new Date(document.getElementById('lastTrackingAt').value).toISOString():null,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
   const data=await response.json();if(!response.ok)throw new Error(data.error||'Ticket could not be saved');
   document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="step">Saved to VAMSEE database · '+escapeHTML(data.id)+'</span>');await loadTickets();
  }catch(error){document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="pill urgent">Save failed: '+escapeHTML(error.message)+'</span>');}
