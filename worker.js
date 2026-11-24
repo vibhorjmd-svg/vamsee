@@ -37,8 +37,12 @@ Customer message: ${input.message.trim().slice(0,1500)}
 Return only JSON.`;
       try {
         const result = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", {
-          prompt,
+          messages: [
+            { role: "system", content: "You are a logistics support classification engine. Return exactly one JSON object and no other text. Do not include analysis or markdown." },
+            { role: "user", content: prompt }
+          ],
           max_tokens: 500,
+          temperature: 0.1,
           response_format: { type: "json_object" },
           chat_template_kwargs: { enable_thinking: false }
         });
