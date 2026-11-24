@@ -35,6 +35,11 @@ test("User provisioning enforces least-privilege role assignments", () => {
   assert.ok(worker.includes("if(!member||!canManage)"));
 });
 
+test("Invalid individual sessions cannot fall back to the legacy shared session", () => {
+  assert.ok(worker.includes("const legacy=!hasUserCookie&&!member"));
+  assert.ok(worker.includes("!hasUserCookie && await validSession"));
+});
+
 test("Ticket access is scoped to the authenticated organization", () => {
   assert.ok(worker.includes("const organizationId=member?.organization_id||DEMO_ORG_ID"));
   assert.ok(worker.includes("WHERE organization_id = ?"));
