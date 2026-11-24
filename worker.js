@@ -8,6 +8,13 @@ const SESSION_COOKIE = "vamsee_session";
 const DEMO_ORG_ID = "org_vamsee_demo";
 const SESSION_SECONDS = 8 * 60 * 60;
 const encoder = new TextEncoder();
+const USER_SESSION_COOKIE="vamsee_user_session", USER_SESSION_SECONDS=28800, PBKDF2_ITERATIONS=210000;
+function decode64url(s){return Uint8Array.from(atob(s.replaceAll("-","+").replaceAll("_","/")+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));}
+async function hashPassword(p){const salt=crypto.getRandomValues(new Uint8Array(16));const k=await crypto.subtle.importKey("raw",encoder.encode(p),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:PBKDF2_ITERATIONS,hash:"SHA-256"},k,256);return "pbkdf2$"+PBKDF2_ITERATIONS+"$"+toBase64Url(salt)+"$"+toBase64Url(new Uint8Array(bits));}
+async function verifyPassword(p,stored){try{const [kind,n,s,h]=stored.split("$");if(kind!=="pbkdf2"||+n<100000||+n>1000000)return false;const k=await crypto.subtle.importKey("raw",encoder.encode(p),"PBKDF2",false,["deriveBits"]);const a=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:decode64url(s),iterations:+n,hash:"SHA-256"},k,256)),b=decode64url(h);if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a[i]^b[i];return d===0;}catch{return false;}}
+async function userToken(payload,secret){const body=toBase64Url(encoder.encode(JSON.stringify({...payload,exp:Math.floor(Date.now()/1000)+USER_SESSION_SECONDS})));const sig=await crypto.subtle.sign("HMAC",await sessionKey(secret),encoder.encode(body));return body+"."+toBase64Url(new Uint8Array(sig));}
+async function userPayload(request,secret){try{const c=(request.headers.get("Cookie")||"").split(";").map(x=>x.trim()).find(x=>x.startsWith(USER_SESSION_COOKIE+"="));if(!c||!secret)return null;const [body,sig,...rest]=c.slice(USER_SESSION_COOKIE.length+1).split(".");if(!body||!sig||rest.length)return null;if(!await crypto.subtle.verify("HMAC",await sessionKey(secret),decode64url(sig),encoder.encode(body)))return null;const p=JSON.parse(new TextDecoder().decode(decode64url(body)));return p.exp>Date.now()/1000?p:null;}catch{return null;}}
+
 
 function toBase64Url(bytes) {
   let binary = "";
@@ -58,7 +65,40 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    // Login and session endpoints are the only unauthenticated API routes.
+    // Individual account endpoints.\n
+    if(url.pathname==="/api/auth/bootstrap"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      if(!env.DB||!env.VAMSEE_BOOTSTRAP_TOKEN||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Bootstrap secrets or database are not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      if(typeof b.token!=="string"||!(await passwordMatches(b.token,env.VAMSEE_BOOTSTRAP_TOKEN)))return json({error:"Invalid setup token."},401);
+      const count=await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();if(Number(count?.n||0)!==0)return json({error:"Initial setup is already complete."},409);
+      const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.password==="string"?b.password:"";
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128)return json({error:"Enter a valid email, full name and a 12–128 character password."},400);
+      const id="usr_"+crypto.randomUUID(),now=new Date().toISOString(),ph=await hashPassword(pass);
+      await env.DB.batch([
+        env.DB.prepare("INSERT OR IGNORE INTO organizations(id,name,slug,organization_type) VALUES(?,?,?,'platform')").bind(DEMO_ORG_ID,"VAMSEE Platform","vamsee-platform"),
+        env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(id,email,name,ph,now,now),
+        env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,'platform_admin','active')").bind("mem_"+crypto.randomUUID(),DEMO_ORG_ID,id)
+      ]);
+      const t=await userToken({user_id:id,organization_id:DEMO_ORG_ID},env.VAMSEE_SESSION_SECRET);
+      return json({ok:true,user:{id,email,full_name:name,role:"platform_admin"}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+    }
+    if(url.pathname==="/api/auth/login"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Individual login is not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim().toLowerCase(),pass=typeof b.password==="string"?b.password:"";
+      const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.password_hash,m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.email=? COLLATE NOCASE AND u.status='active' AND m.status='active' AND o.status='active' ORDER BY CASE m.role WHEN 'platform_admin' THEN 0 WHEN 'org_admin' THEN 1 ELSE 2 END LIMIT 1").bind(email).first();
+      if(!u?.password_hash||!(await verifyPassword(pass,u.password_hash)))return json({error:"Email or password is incorrect."},401);
+      const t=await userToken({user_id:u.id,organization_id:u.organization_id},env.VAMSEE_SESSION_SECRET);
+      return json({ok:true,user:{id:u.id,email:u.email,full_name:u.full_name,role:u.role}},200,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+    }
+    if(url.pathname==="/api/auth/session"&&request.method==="GET"){
+      const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);if(!p||!env.DB)return json({authenticated:false});
+      const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first();
+      return json(u?{authenticated:true,user:u}:{authenticated:false});
+    }
+\n    // Legacy demo login remains available during migration.
     if (url.pathname === "/api/login" && request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
       if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
@@ -88,16 +128,16 @@ export default {
       });
     }
 
-    if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
-      return json({ error: "VAMSEE access controls are not configured." }, 503);
-    }
-    if (!(await validSession(request, env.VAMSEE_SESSION_SECRET))) {
-      return json({ error: "Authentication required." }, 401);
-    }
-    if (["POST", "PATCH", "PUT", "DELETE"].includes(request.method) && !sameOrigin(request)) {
-      return json({ error: "Request origin rejected." }, 403);
-    }
-    if (!env.DB) return json({ error: "Database binding DB is not configured." }, 503);
+    if(!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Session signing is not configured."},503);
+    if(!env.DB)return json({error:"Database binding DB is not configured."},503);
+    const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);
+    const member=p?await env.DB.prepare("SELECT m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first():null;
+    const legacy=!member&&env.VAMSEE_ACCESS_PASSWORD&&await validSession(request,env.VAMSEE_SESSION_SECRET);
+    if(!member&&!legacy)return json({error:"Authentication required."},401);
+    if(["POST","PATCH","PUT","DELETE"].includes(request.method)&&!sameOrigin(request))return json({error:"Request origin rejected."},403);
+    const organizationId=member?.organization_id||DEMO_ORG_ID, role=member?.role||"platform_admin";
+    const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
+    const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
     if (request.method === "GET" && url.pathname === "/api/health") {
       return json({ ok: true, service: "VAMSEE ticket API" });
     }
@@ -171,7 +211,7 @@ Return only JSON.`;
         return json({ error: "AI processing failed: " + error.message }, 502);
       }
     }
-    if (request.method === "POST" && url.pathname === "/api/escalations/run") {
+    if (request.method === "POST" && url.pathname === "/api/escalations/run") {\n      if(!canManage)return json({error:"Your role cannot run escalations."},403);
       const now = new Date();
       const cutoff = new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString();
       const result = await env.DB.prepare(`UPDATE tickets
@@ -182,14 +222,14 @@ Return only JSON.`;
           AND status IN ('OPEN', 'IN_PROGRESS')
           AND created_at <= ?
           AND assigned_queue != 'Priority Escalations'`)
-        .bind(DEMO_ORG_ID, cutoff).run();
+        .bind(organizationId, cutoff).run();
       return json({ ok: true, escalated: result.meta.changes || 0, checked_at: now.toISOString() });
     }
     if (request.method === "GET" && url.pathname === "/api/tickets") {
       const status = url.searchParams.get("status");
       const priority = url.searchParams.get("priority");
       let sql = "SELECT * FROM tickets";
-      const where = ["organization_id = ?"], values = [DEMO_ORG_ID];
+      const where = ["organization_id = ?"], values = [organizationId];
       if (status && ["OPEN","IN_PROGRESS","RESOLVED"].includes(status)) { where.push("status = ?"); values.push(status); }
       if (priority && ["HIGH","MEDIUM","NORMAL"].includes(priority)) { where.push("priority = ?"); values.push(priority); }
       if (where.length) sql += " WHERE " + where.join(" AND ");
@@ -197,7 +237,7 @@ Return only JSON.`;
       const { results } = await env.DB.prepare(sql).bind(...values).all();
       return json({ tickets: results });
     }
-    if (request.method === "POST" && url.pathname === "/api/tickets") {
+    if (request.method === "POST" && url.pathname === "/api/tickets") {\n      if(!canOperate)return json({error:"Your role cannot create tickets."},403);
       let t;
       try { t = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       const required = ["id","customer_name","tracking_number","issue_type","priority","assigned_queue","next_action","customer_reply"];
@@ -214,16 +254,16 @@ Return only JSON.`;
       await env.DB.prepare(`INSERT INTO tickets
         (id, organization_id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at, last_tracking_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`)
-        .bind(t.id,DEMO_ORG_ID,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
+        .bind(t.id,organizationId,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
       return json({ ok: true, id: t.id }, 201);
     }
     const match = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
-    if (request.method === "PATCH" && match) {
+    if (request.method === "PATCH" && match) {\n      if(!canOperate)return json({error:"Your role cannot update tickets."},403);
       let body;
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       if (!["OPEN","IN_PROGRESS","RESOLVED"].includes(body.status)) return json({ error: "Invalid status." }, 400);
       const result = await env.DB.prepare("UPDATE tickets SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ?")
-        .bind(body.status,new Date().toISOString(),decodeURIComponent(match[1]),DEMO_ORG_ID).run();
+        .bind(body.status,new Date().toISOString(),decodeURIComponent(match[1]),organizationId).run();
       if (!result.meta.changes) return json({ error: "Ticket not found." }, 404);
       return json({ ok: true });
     }
