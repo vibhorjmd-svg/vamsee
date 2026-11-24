@@ -88,7 +88,8 @@ export default {
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
       if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Individual login is not configured."},503);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
-      const email=String(b.email||"").trim().toLowerCase(),pass=typeof b.password==="string"?b.password:"";\n      if(pass.length>128)return json({error:"Password is too long."},400);
+      const email=String(b.email||"").trim().toLowerCase(),pass=typeof b.password==="string"?b.password:"";
+      if(pass.length>128)return json({error:"Password is too long."},400);
       const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.password_hash,m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.email=? COLLATE NOCASE AND u.status='active' AND m.status='active' AND o.status='active' ORDER BY CASE m.role WHEN 'platform_admin' THEN 0 WHEN 'org_admin' THEN 1 ELSE 2 END LIMIT 1").bind(email).first();
       if(!u?.password_hash||!(await verifyPassword(pass,u.password_hash)))return json({error:"Email or password is incorrect."},401);
       const t=await userToken({user_id:u.id,organization_id:u.organization_id},env.VAMSEE_SESSION_SECRET);
