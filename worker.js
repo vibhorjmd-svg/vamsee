@@ -127,7 +127,8 @@ export default {
       if (!env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
         return json({ authenticated: false, configured: false }, 503);
       }
-      return json({ authenticated: await validSession(request, env.VAMSEE_SESSION_SECRET), configured: true });
+      const hasUserCookie=(request.headers.get("Cookie")||"").split(";").some(v=>v.trim().startsWith(USER_SESSION_COOKIE+"="));
+      return json({ authenticated: !hasUserCookie && await validSession(request, env.VAMSEE_SESSION_SECRET), configured: true });
     }
     if (url.pathname === "/api/logout" && request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
@@ -140,7 +141,8 @@ export default {
     if(!env.DB)return json({error:"Database binding DB is not configured."},503);
     const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);
     const member=p?await env.DB.prepare("SELECT m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first():null;
-    const legacy=!member&&env.VAMSEE_ACCESS_PASSWORD&&await validSession(request,env.VAMSEE_SESSION_SECRET);
+    const hasUserCookie=(request.headers.get("Cookie")||"").split(";").some(v=>v.trim().startsWith(USER_SESSION_COOKIE+"="));
+    const legacy=!hasUserCookie&&!member&&env.VAMSEE_ACCESS_PASSWORD&&await validSession(request,env.VAMSEE_SESSION_SECRET);
     if(!member&&!legacy)return json({error:"Authentication required."},401);
     if(["POST","PATCH","PUT","DELETE"].includes(request.method)&&!sameOrigin(request))return json({error:"Request origin rejected."},403);
     const organizationId=member?.organization_id||DEMO_ORG_ID, role=member?.role||"platform_admin";
