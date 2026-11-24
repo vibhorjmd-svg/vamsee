@@ -309,8 +309,9 @@ Return only JSON.`;
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
       const tracking=String(b.tracking_number||"").trim(),carrier=String(b.carrier_code||"").trim().toUpperCase(),status=String(b.current_status||"unknown").trim().toLowerCase();
       const allowed=["unknown","created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
-      if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status))return json({error:"Provide a tracking number (max 100 characters), valid carrier code, and supported status."},400);
-      const id="shp_"+crypto.randomUUID(),now=new Date().toISOString();
+      const trackingDate=b.last_tracking_at?new Date(b.last_tracking_at):null;
+      if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status)||(b.last_tracking_at&&(!trackingDate||!Number.isFinite(trackingDate.getTime()))))return json({error:"Provide a tracking number (max 100 characters), valid carrier code, supported status, and valid optional tracking date."},400);
+      const id="shp_"+crypto.randomUUID(),now=new Date().toISOString(),trackingAt=trackingDate?trackingDate.toISOString():null;
       try{
         await env.DB.batch([
           env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?, 'manual',?,?,?)").bind(id,organizationId,tracking,carrier||null,status,trackingAt,trackingAt,b.external_reference?String(b.external_reference).slice(0,120):null,now,now),
