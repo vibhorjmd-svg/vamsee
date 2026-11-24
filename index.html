@@ -58,7 +58,7 @@ const configs={
 };
 function processTicket(){
  const n=document.getElementById('customer').value.trim()||'Customer', t=document.getElementById('tracking').value.trim()||'Not provided', key=document.getElementById('issue').value, msg=document.getElementById('message').value.trim(), c=configs[key];
- latestReply=c.reply(n,t);
+ latestReply=c.reply(n,t).replaceAll(String.fromCharCode(92)+'n',String.fromCharCode(10));
  document.getElementById('classification').innerHTML=`<span class="pill ${c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':''}">${c.priority} PRIORITY</span><span class="pill">${key.toUpperCase()}</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>${c.team}</b> · Next action: ${c.sla}</p>`;
  document.getElementById('reply').textContent=latestReply;
  document.getElementById('actions').innerHTML=`<span class="step">1 · Categorised</span><span class="step">2 · Draft prepared</span><span class="step">3 · ${c.priority==='HIGH'?'Escalation flagged':'Routine queue'}</span>`;
