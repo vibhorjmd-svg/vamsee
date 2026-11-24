@@ -88,7 +88,7 @@ export default {
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
       if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Individual login is not configured."},503);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
-      const email=String(b.email||"").trim().toLowerCase(),pass=typeof b.password==="string"?b.password:"";
+      const email=String(b.email||"").trim().toLowerCase(),pass=typeof b.password==="string"?b.password:"";\n      if(pass.length>128)return json({error:"Password is too long."},400);
       const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.password_hash,m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.email=? COLLATE NOCASE AND u.status='active' AND m.status='active' AND o.status='active' ORDER BY CASE m.role WHEN 'platform_admin' THEN 0 WHEN 'org_admin' THEN 1 ELSE 2 END LIMIT 1").bind(email).first();
       if(!u?.password_hash||!(await verifyPassword(pass,u.password_hash)))return json({error:"Email or password is incorrect."},401);
       const t=await userToken({user_id:u.id,organization_id:u.organization_id},env.VAMSEE_SESSION_SECRET);
@@ -146,7 +146,7 @@ export default {
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
 
     if(request.method==="POST"&&url.pathname==="/api/users"){
-      if(!canManage)return json({error:"Only workspace administrators can create users."},403);
+      if(!member||!canManage)return json({error:"Only authenticated workspace administrators can create users."},403);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
       const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.temporary_password==="string"?b.temporary_password:"",newRole=String(b.role||"");
       const allowed=["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"];
@@ -158,7 +158,7 @@ export default {
       await env.DB.batch([
         env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(id,email,name,ph,now,now),
         env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,?,'active')").bind("mem_"+crypto.randomUUID(),organizationId,id,newRole),
-        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'user.created','user',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,authContext?.user_id||null,id,JSON.stringify({role:newRole,email}))
+        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'user.created','user',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,id,JSON.stringify({role:newRole,email}))
       ]);
       return json({ok:true,user:{id,email,full_name:name,role:newRole},message:"Account created. Share the temporary password through a separate secure channel."},201);
     }
