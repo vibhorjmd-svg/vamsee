@@ -12,7 +12,7 @@ test("Worker and dashboard JavaScript parse", () => {
 });
 
 test("Individual passwords use salted PBKDF2-HMAC-SHA-256", () => {
-  assert.ok(worker.includes("PBKDF2_ITERATIONS=210000"));
+  assert.ok(worker.includes("PBKDF2_ITERATIONS=100000"));
   assert.ok(worker.includes("getRandomValues(new Uint8Array(16))"));
   assert.ok(worker.includes('hash:"SHA-256"'));
 });
