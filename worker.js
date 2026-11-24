@@ -36,7 +36,7 @@ Enquiry type: ${issueLabels[input.issue_type]}
 Customer message: ${input.message.trim().slice(0,1500)}
 Return only JSON.`;
       try {
-        const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", { prompt, max_tokens: 500 });
+        const result = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", { prompt, max_tokens: 500 });
         const raw = typeof result === "string" ? result : (result.response || result.output || "");
         const match = String(raw).match(/\{[\s\S]*\}/);
         if (!match) throw new Error("AI returned an unreadable response.");
