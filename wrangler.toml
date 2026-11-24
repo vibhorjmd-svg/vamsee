@@ -9,5 +9,5 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "vamsee-tickets"
-database_id = "REPLACE_WITH_CLOUDFLARE_D1_DATABASE_ID"
+database_id = "a2b27b90-5598-4ef5-86e8-5176f4519181"
 migrations_dir = "migrations"
