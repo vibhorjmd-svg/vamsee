@@ -28,6 +28,21 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
     <input id="accessPassword" type="password" autocomplete="current-password" required maxlength="256">
     <button class="btn" id="loginButton" type="submit">Sign in securely</button>
   </form>
+  <details style="margin-top:16px">
+    <summary style="cursor:pointer;color:var(--lime);font-size:14px">First-time setup · Create the owner account</summary>
+    <p class="muted" style="font-size:12px">Use the one-time setup token saved in Cloudflare Worker secrets. This works only before the first account is created.</p>
+    <form id="bootstrapForm">
+      <label for="bootstrapToken">One-time setup token</label>
+      <input id="bootstrapToken" type="password" required autocomplete="off">
+      <label for="bootstrapName">Your full name</label>
+      <input id="bootstrapName" required minlength="2" maxlength="120" autocomplete="name">
+      <label for="bootstrapEmail">Owner email</label>
+      <input id="bootstrapEmail" type="email" required maxlength="254" autocomplete="email">
+      <label for="bootstrapPassword">New password (12+ characters)</label>
+      <input id="bootstrapPassword" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+      <button class="btn" id="bootstrapButton" type="submit">Create owner account</button>
+    </form>
+  </details>
   <div id="loginError" role="alert" aria-live="polite"></div>
 </section>
 <main id="appContent" class="wrap">
@@ -399,6 +414,26 @@ async function checkSession(){
   document.getElementById('loginError').textContent='Unable to verify your session. Refresh and try again.';
  }
 }
+async function bootstrapAdmin(event){
+ event.preventDefault();
+ const button=document.getElementById('bootstrapButton'),errorBox=document.getElementById('loginError');
+ button.disabled=true;button.textContent='Creating owner account…';errorBox.textContent='';
+ try{
+  const response=await fetch('/api/auth/bootstrap',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({
+   token:document.getElementById('bootstrapToken').value,
+   full_name:document.getElementById('bootstrapName').value.trim(),
+   email:document.getElementById('bootstrapEmail').value.trim(),
+   password:document.getElementById('bootstrapPassword').value
+  })});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Owner account setup failed.');
+  document.getElementById('bootstrapToken').value='';
+  document.getElementById('bootstrapPassword').value='';
+  await checkSession();
+  errorBox.textContent='Owner account created. Remove VAMSEE_BOOTSTRAP_TOKEN from Cloudflare secrets now.';
+ }catch(error){errorBox.textContent=error.message;}
+ finally{button.disabled=false;button.textContent='Create owner account';}
+}
 async function login(event){
  event.preventDefault();
  const button=document.getElementById('loginButton'),errorBox=document.getElementById('loginError');
@@ -424,6 +459,7 @@ async function logout(){
 document.addEventListener('DOMContentLoaded',function(){
  ['ticketSearch','priorityFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='ticketSearch'?'input':'change',applyTicketFilters));
  document.getElementById('loginForm').addEventListener('submit',login);
+ document.getElementById('bootstrapForm').addEventListener('submit',bootstrapAdmin);
  document.getElementById('userCreateForm').addEventListener('submit',createUser);
  document.getElementById('shipmentCreateForm').addEventListener('submit',createShipment);
  checkSession();
