@@ -3,8 +3,18 @@ const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.string
 });
 
 const SESSION_COOKIE = "vamsee_session";
+// Until per-user sessions are enabled, the existing private workspace is pinned
+// to its seeded tenant. Never accept an organization ID from the browser.
+const DEMO_ORG_ID = "org_vamsee_demo";
 const SESSION_SECONDS = 8 * 60 * 60;
 const encoder = new TextEncoder();
+const USER_SESSION_COOKIE="vamsee_user_session", USER_SESSION_SECONDS=28800, PBKDF2_ITERATIONS=210000;
+function decode64url(s){return Uint8Array.from(atob(s.replaceAll("-","+").replaceAll("_","/")+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));}
+async function hashPassword(p){const salt=crypto.getRandomValues(new Uint8Array(16));const k=await crypto.subtle.importKey("raw",encoder.encode(p),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:PBKDF2_ITERATIONS,hash:"SHA-256"},k,256);return "pbkdf2$"+PBKDF2_ITERATIONS+"$"+toBase64Url(salt)+"$"+toBase64Url(new Uint8Array(bits));}
+async function verifyPassword(p,stored){try{const [kind,n,s,h]=stored.split("$");if(kind!=="pbkdf2"||+n<100000||+n>1000000)return false;const k=await crypto.subtle.importKey("raw",encoder.encode(p),"PBKDF2",false,["deriveBits"]);const a=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:decode64url(s),iterations:+n,hash:"SHA-256"},k,256)),b=decode64url(h);if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a[i]^b[i];return d===0;}catch{return false;}}
+async function userToken(payload,secret){const body=toBase64Url(encoder.encode(JSON.stringify({...payload,exp:Math.floor(Date.now()/1000)+USER_SESSION_SECONDS})));const sig=await crypto.subtle.sign("HMAC",await sessionKey(secret),encoder.encode(body));return body+"."+toBase64Url(new Uint8Array(sig));}
+async function userPayload(request,secret){try{const c=(request.headers.get("Cookie")||"").split(";").map(x=>x.trim()).find(x=>x.startsWith(USER_SESSION_COOKIE+"="));if(!c||!secret)return null;const [body,sig,...rest]=c.slice(USER_SESSION_COOKIE.length+1).split(".");if(!body||!sig||rest.length)return null;if(!await crypto.subtle.verify("HMAC",await sessionKey(secret),decode64url(sig),encoder.encode(body)))return null;const p=JSON.parse(new TextDecoder().decode(decode64url(body)));return p.exp>Date.now()/1000?p:null;}catch{return null;}}
+
 
 function toBase64Url(bytes) {
   let binary = "";
@@ -55,7 +65,48 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    // Login and session endpoints are the only unauthenticated API routes.
+    // Individual account endpoints.
+
+    if(url.pathname==="/api/auth/bootstrap"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      if(!env.DB||!env.VAMSEE_BOOTSTRAP_TOKEN||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Bootstrap secrets or database are not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      if(typeof b.token!=="string"||!(await passwordMatches(b.token,env.VAMSEE_BOOTSTRAP_TOKEN)))return json({error:"Invalid setup token."},401);
+      const count=await env.DB.prepare("SELECT COUNT(*) AS n FROM users").first();if(Number(count?.n||0)!==0)return json({error:"Initial setup is already complete."},409);
+      const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.password==="string"?b.password:"";
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128)return json({error:"Enter a valid email, full name and a 12–128 character password."},400);
+      const id="usr_"+crypto.randomUUID(),now=new Date().toISOString(),ph=await hashPassword(pass);
+      const setup=await env.DB.batch([
+        env.DB.prepare("INSERT OR IGNORE INTO organizations(id,name,slug,organization_type) VALUES(?,?,?,'platform')").bind(DEMO_ORG_ID,"VAMSEE Platform","vamsee-platform"),
+        env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) SELECT ?,?,?,?,'active',?,? WHERE NOT EXISTS (SELECT 1 FROM users)").bind(id,email,name,ph,now,now),
+        env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) SELECT ?,?,?, 'platform_admin','active' WHERE EXISTS (SELECT 1 FROM users WHERE id=?)").bind("mem_"+crypto.randomUUID(),DEMO_ORG_ID,id,id)
+      ]);
+      if(!setup?.[1]?.meta?.changes)return json({error:"Initial setup has already been completed."},409);
+      const t=await userToken({user_id:id,organization_id:DEMO_ORG_ID},env.VAMSEE_SESSION_SECRET);
+      return json({ok:true,user:{id,email,full_name:name,role:"platform_admin"}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+    }
+    if(url.pathname==="/api/auth/login"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Individual login is not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim().toLowerCase(),pass=typeof b.password==="string"?b.password:"";
+      if(pass.length>128)return json({error:"Password is too long."},400);
+      const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.password_hash,m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.email=? COLLATE NOCASE AND u.status='active' AND m.status='active' AND o.status='active' ORDER BY CASE m.role WHEN 'platform_admin' THEN 0 WHEN 'org_admin' THEN 1 ELSE 2 END LIMIT 1").bind(email).first();
+      if(!u?.password_hash||!(await verifyPassword(pass,u.password_hash)))return json({error:"Email or password is incorrect."},401);
+      const t=await userToken({user_id:u.id,organization_id:u.organization_id},env.VAMSEE_SESSION_SECRET);
+      return json({ok:true,user:{id:u.id,email:u.email,full_name:u.full_name,role:u.role}},200,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+    }
+    if(url.pathname==="/api/auth/logout"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      return json({ok:true},200,{"Set-Cookie":USER_SESSION_COOKIE+"=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"});
+    }
+    if(url.pathname==="/api/auth/session"&&request.method==="GET"){
+      const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);if(!p||!env.DB)return json({authenticated:false});
+      const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first();
+      return json(u?{authenticated:true,user:u}:{authenticated:false});
+    }
+
+    // Legacy demo login remains available during migration.
     if (url.pathname === "/api/login" && request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
       if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
@@ -76,7 +127,8 @@ export default {
       if (!env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
         return json({ authenticated: false, configured: false }, 503);
       }
-      return json({ authenticated: await validSession(request, env.VAMSEE_SESSION_SECRET), configured: true });
+      const hasUserCookie=(request.headers.get("Cookie")||"").split(";").some(v=>v.trim().startsWith(USER_SESSION_COOKIE+"="));
+      return json({ authenticated: !hasUserCookie && await validSession(request, env.VAMSEE_SESSION_SECRET), configured: true });
     }
     if (url.pathname === "/api/logout" && request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
@@ -85,20 +137,64 @@ export default {
       });
     }
 
-    if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
-      return json({ error: "VAMSEE access controls are not configured." }, 503);
+    if(!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Session signing is not configured."},503);
+    if(!env.DB)return json({error:"Database binding DB is not configured."},503);
+    const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);
+    const member=p?await env.DB.prepare("SELECT m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first():null;
+    const hasUserCookie=(request.headers.get("Cookie")||"").split(";").some(v=>v.trim().startsWith(USER_SESSION_COOKIE+"="));
+    const legacy=!hasUserCookie&&!member&&env.VAMSEE_ACCESS_PASSWORD&&await validSession(request,env.VAMSEE_SESSION_SECRET);
+    if(!member&&!legacy)return json({error:"Authentication required."},401);
+    if(["POST","PATCH","PUT","DELETE"].includes(request.method)&&!sameOrigin(request))return json({error:"Request origin rejected."},403);
+    const organizationId=member?.organization_id||DEMO_ORG_ID, role=member?.role||"platform_admin";
+    const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
+    const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
+
+    if(request.method==="GET"&&url.pathname==="/api/users"){
+      if(!member||!canManage)return json({error:"Only workspace administrators can view users."},403);
+      const result=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.status,m.role,m.created_at FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.organization_id=? ORDER BY m.created_at DESC LIMIT 200").bind(organizationId).all();
+      return json({users:result.results||[]});
     }
-    if (!(await validSession(request, env.VAMSEE_SESSION_SECRET))) {
-      return json({ error: "Authentication required." }, 401);
+    if(request.method==="POST"&&url.pathname==="/api/users"){
+      if(!member||!canManage)return json({error:"Only authenticated workspace administrators can create users."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.temporary_password==="string"?b.temporary_password:"",newRole=String(b.role||"");
+      const roleAssignments={
+        platform_admin:["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+        org_admin:["seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+        seller_admin:["seller_operator","viewer"],
+        logistics_manager:["logistics_agent","viewer"],
+        courier_manager:["courier_operator","viewer"]
+      };
+      const assignable=roleAssignments[role]||[];
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128)return json({error:"Provide valid user details, a 12–128 character temporary password, and an allowed role."},400);
+      if(!assignable.includes(newRole))return json({error:"Your role cannot assign the requested access level."},403);
+      const existing=await env.DB.prepare("SELECT id FROM users WHERE email=? COLLATE NOCASE").bind(email).first();
+      if(existing)return json({error:"A user with this email already exists."},409);
+      const id="usr_"+crypto.randomUUID(),now=new Date().toISOString(),ph=await hashPassword(pass);
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(id,email,name,ph,now,now),
+        env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,?,'active')").bind("mem_"+crypto.randomUUID(),organizationId,id,newRole),
+        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'user.created','user',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,id,JSON.stringify({role:newRole,email}))
+      ]);
+      return json({ok:true,user:{id,email,full_name:name,role:newRole},message:"Account created. Share the temporary password through a separate secure channel."},201);
     }
-    if (["POST", "PATCH", "PUT", "DELETE"].includes(request.method) && !sameOrigin(request)) {
-      return json({ error: "Request origin rejected." }, 403);
-    }
-    if (!env.DB) return json({ error: "Database binding DB is not configured." }, 503);
     if (request.method === "GET" && url.pathname === "/api/health") {
       return json({ ok: true, service: "VAMSEE ticket API" });
     }
     if (request.method === "POST" && url.pathname === "/api/assist") {
+      // Protect the AI endpoint from unauthenticated use and unexpected AI spend.
+      if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
+      if (!env.DB || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
+        return json({ error: "Authentication is not configured." }, 503);
+      }
+      const assistPayload = await userPayload(request, env.VAMSEE_SESSION_SECRET);
+      const assistMember = assistPayload ? await env.DB.prepare(
+        "SELECT m.organization_id FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'"
+      ).bind(assistPayload.user_id, assistPayload.organization_id).first() : null;
+      const hasIndividualCookie = (request.headers.get("Cookie") || "").split(";").some(v => v.trim().startsWith(USER_SESSION_COOKIE + "="));
+      const hasLegacySession = !hasIndividualCookie && env.VAMSEE_ACCESS_PASSWORD &&
+        await validSession(request, env.VAMSEE_SESSION_SECRET);
+      if (!assistMember && !hasLegacySession) return json({ error: "Authentication required." }, 401);
       let input;
       try { input = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       const allowedIssues = ["delay", "tracking", "delivery", "address", "damage"];
@@ -169,23 +265,25 @@ Return only JSON.`;
       }
     }
     if (request.method === "POST" && url.pathname === "/api/escalations/run") {
+      if(!canManage)return json({error:"Your role cannot run escalations."},403);
       const now = new Date();
       const cutoff = new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString();
       const result = await env.DB.prepare(`UPDATE tickets
         SET assigned_queue = 'Priority Escalations',
             next_action = 'Auto-escalated: HIGH-priority ticket exceeded the 4-hour demo SLA. Review the case and contact the carrier/customer.'
-        WHERE priority = 'HIGH'
+        WHERE organization_id = ?
+          AND priority = 'HIGH'
           AND status IN ('OPEN', 'IN_PROGRESS')
           AND created_at <= ?
           AND assigned_queue != 'Priority Escalations'`)
-        .bind(cutoff).run();
+        .bind(organizationId, cutoff).run();
       return json({ ok: true, escalated: result.meta.changes || 0, checked_at: now.toISOString() });
     }
     if (request.method === "GET" && url.pathname === "/api/tickets") {
       const status = url.searchParams.get("status");
       const priority = url.searchParams.get("priority");
       let sql = "SELECT * FROM tickets";
-      const where = [], values = [];
+      const where = ["organization_id = ?"], values = [organizationId];
       if (status && ["OPEN","IN_PROGRESS","RESOLVED"].includes(status)) { where.push("status = ?"); values.push(status); }
       if (priority && ["HIGH","MEDIUM","NORMAL"].includes(priority)) { where.push("priority = ?"); values.push(priority); }
       if (where.length) sql += " WHERE " + where.join(" AND ");
@@ -194,6 +292,7 @@ Return only JSON.`;
       return json({ tickets: results });
     }
     if (request.method === "POST" && url.pathname === "/api/tickets") {
+      if(!canOperate)return json({error:"Your role cannot create tickets."},403);
       let t;
       try { t = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       const required = ["id","customer_name","tracking_number","issue_type","priority","assigned_queue","next_action","customer_reply"];
@@ -208,18 +307,62 @@ Return only JSON.`;
         lastTrackingAt = new Date(t.last_tracking_at).toISOString();
       }
       await env.DB.prepare(`INSERT INTO tickets
-        (id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at, last_tracking_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`)
-        .bind(t.id,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
+        (id, organization_id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at, last_tracking_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`)
+        .bind(t.id,organizationId,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
       return json({ ok: true, id: t.id }, 201);
     }
+
+    if(request.method==="GET"&&url.pathname==="/api/shipments"){
+      const result=await env.DB.prepare("SELECT id,tracking_number,carrier_code,aggregator_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at FROM shipments WHERE organization_id=? ORDER BY updated_at DESC LIMIT 200").bind(organizationId).all();
+      return json({shipments:result.results||[]});
+    }
+    if(request.method==="POST"&&url.pathname==="/api/shipments"){
+      if(!canOperate)return json({error:"Your role cannot create shipments."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const tracking=String(b.tracking_number||"").trim(),carrier=String(b.carrier_code||"").trim().toUpperCase(),status=String(b.current_status||"unknown").trim().toLowerCase();
+      const allowed=["unknown","created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
+      const trackingDate=b.last_tracking_at?new Date(b.last_tracking_at):null;
+      if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status)||(b.last_tracking_at&&(!trackingDate||!Number.isFinite(trackingDate.getTime()))))return json({error:"Provide a tracking number (max 100 characters), valid carrier code, supported status, and valid optional tracking date."},400);
+      const id="shp_"+crypto.randomUUID(),now=new Date().toISOString(),trackingAt=trackingDate?trackingDate.toISOString():null;
+      try{
+        await env.DB.batch([
+          env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?, 'manual',?,?,?)").bind(id,organizationId,tracking,carrier||null,status,trackingAt,trackingAt,b.external_reference?String(b.external_reference).slice(0,120):null,now,now),
+          env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'shipment.created','shipment',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,id,JSON.stringify({tracking_number:tracking,carrier_code:carrier||null}))
+        ]);
+      }catch(error){if(String(error.message||"").includes("UNIQUE"))return json({error:"That tracking number already exists in this workspace."},409);throw error;}
+      return json({ok:true,id},201);
+    }
+    const eventMatch=url.pathname.match(/^\/api\/shipments\/([^/]+)\/events$/);
+    if(request.method==="GET"&&eventMatch){
+      const result=await env.DB.prepare("SELECT id,event_code,event_status,description,location,event_time,source,created_at FROM shipment_events WHERE shipment_id=? AND organization_id=? ORDER BY event_time DESC LIMIT 100").bind(decodeURIComponent(eventMatch[1]),organizationId).all();
+      return json({events:result.results||[]});
+    }
+    if(request.method==="POST"&&eventMatch){
+      if(!canOperate)return json({error:"Your role cannot add shipment events."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const status=String(b.event_status||"").trim().toLowerCase(),description=String(b.description||"").trim(),location=String(b.location||"").trim(),eventTime=new Date(b.event_time||Date.now());
+      const allowed=["created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"];
+      if(!allowed.includes(status)||!description||description.length>500||location.length>120||!Number.isFinite(eventTime.getTime()))return json({error:"Provide a valid event status, description, optional location, and event time."},400);
+      const shipmentId=decodeURIComponent(eventMatch[1]),exists=await env.DB.prepare("SELECT id FROM shipments WHERE id=? AND organization_id=?").bind(shipmentId,organizationId).first();
+      if(!exists)return json({error:"Shipment not found."},404);
+      const now=new Date().toISOString(),eventId="evt_"+crypto.randomUUID(),iso=eventTime.toISOString();
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_status,description,location,event_time,source) VALUES(?,?,?,?,?,?,?,'manual')").bind(eventId,organizationId,shipmentId,status,description,location||null,iso),
+        env.DB.prepare("UPDATE shipments SET current_status=?,last_tracking_at=?,last_event_at=?,updated_at=? WHERE id=? AND organization_id=?").bind(status,iso,iso,now,shipmentId,organizationId),
+        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'shipment.event_added','shipment',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,shipmentId,JSON.stringify({event_status:status,event_id:eventId}))
+      ]);
+      return json({ok:true,id:eventId},201);
+    }
+
     const match = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
     if (request.method === "PATCH" && match) {
+      if(!canOperate)return json({error:"Your role cannot update tickets."},403);
       let body;
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       if (!["OPEN","IN_PROGRESS","RESOLVED"].includes(body.status)) return json({ error: "Invalid status." }, 400);
-      const result = await env.DB.prepare("UPDATE tickets SET status = ?, updated_at = ? WHERE id = ?")
-        .bind(body.status,new Date().toISOString(),decodeURIComponent(match[1])).run();
+      const result = await env.DB.prepare("UPDATE tickets SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ?")
+        .bind(body.status,new Date().toISOString(),decodeURIComponent(match[1]),organizationId).run();
       if (!result.meta.changes) return json({ error: "Ticket not found." }, 404);
       return json({ ok: true });
     }

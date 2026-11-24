@@ -22,16 +22,48 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
   <h1 id="loginTitle">Private operations workspace</h1>
   <p>Sign in to access the VAMSEE logistics operations dashboard.</p>
   <form id="loginForm">
-    <label for="accessPassword">Access password</label>
+    <label for="loginEmail">Work email (leave blank for legacy demo login)</label>
+    <input id="loginEmail" type="email" autocomplete="username" maxlength="254">
+    <label for="accessPassword">Password</label>
     <input id="accessPassword" type="password" autocomplete="current-password" required maxlength="256">
     <button class="btn" id="loginButton" type="submit">Sign in securely</button>
   </form>
+  <details style="margin-top:16px">
+    <summary style="cursor:pointer;color:var(--lime);font-size:14px">First-time setup · Create the owner account</summary>
+    <p class="muted" style="font-size:12px">Use the one-time setup token saved in Cloudflare Worker secrets. This works only before the first account is created.</p>
+    <form id="bootstrapForm">
+      <label for="bootstrapToken">One-time setup token</label>
+      <input id="bootstrapToken" type="password" required autocomplete="off">
+      <label for="bootstrapName">Your full name</label>
+      <input id="bootstrapName" required minlength="2" maxlength="120" autocomplete="name">
+      <label for="bootstrapEmail">Owner email</label>
+      <input id="bootstrapEmail" type="email" required maxlength="254" autocomplete="email">
+      <label for="bootstrapPassword">New password (12+ characters)</label>
+      <input id="bootstrapPassword" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+      <button class="btn" id="bootstrapButton" type="submit">Create owner account</button>
+    </form>
+  </details>
   <div id="loginError" role="alert" aria-live="polite"></div>
 </section>
 <main id="appContent" class="wrap">
 <header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · LOGISTICS OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
 <h1>Shipment support, <span style="color:var(--lime)">without the manual chase.</span></h1>
 <p class="sub">A practical preview of how an AI-assisted workflow can classify shipment enquiries, draft customer replies and flag cases that need an operations team's attention.</p>
+<section class="panel" id="userAdminPanel" style="display:none;margin-bottom:18px" aria-labelledby="userAdminTitle">
+<h2 id="userAdminTitle">Workspace access management</h2>
+<p class="muted" style="font-size:13px">Create team accounts with least-privilege access. Share temporary passwords separately.</p>
+<form id="userCreateForm">
+<div class="sla-grid">
+<div><label for="newUserName">Full name</label><input id="newUserName" required maxlength="120" autocomplete="name"></div>
+<div><label for="newUserEmail">Work email</label><input id="newUserEmail" type="email" required maxlength="254" autocomplete="off"></div>
+<div><label for="newUserRole">Access role</label><select id="newUserRole" required></select></div>
+</div>
+<label for="newUserPassword">Temporary password (minimum 12 characters)</label><input id="newUserPassword" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+<button class="btn" id="createUserButton" type="submit">Create team account</button>
+</form>
+<p id="userAdminMessage" class="muted" role="status" aria-live="polite"></p>
+<div id="userDirectory"><p class="muted">Loading workspace users…</p></div>
+</section>
 <div class="metrics">
 <div class="metric"><strong id="total">00</strong><small>Total tickets</small></div>
 <div class="metric"><strong id="urgent">00</strong><small>Open escalations</small></div>
@@ -50,6 +82,20 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <div class="metric"><strong id="stagnantCount">00</strong><small>Shipments without movement for 24h+</small></div>
 <div class="metric"><strong id="monitoredCount">00</strong><small>Shipments with tracking timestamps</small></div>
 </div>
+</section>
+<section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
+<h2 id="shipmentTitle">Shipment registry & tracking events</h2>
+<p class="muted" style="font-size:13px">Record shipments and operational scan updates. Carrier integrations can be connected after provider credentials are available.</p>
+<form id="shipmentCreateForm">
+<div class="sla-grid">
+<div><label for="shipmentTracking">Tracking / AWB number</label><input id="shipmentTracking" required maxlength="100"></div>
+<div><label for="shipmentCarrier">Carrier code (optional)</label><input id="shipmentCarrier" maxlength="40" placeholder="e.g. DELHIVERY"></div>
+<div><label for="shipmentStatus">Current status</label><select id="shipmentStatus"><option value="unknown">Unknown</option><option value="created">Created</option><option value="picked_up">Picked up</option><option value="in_transit">In transit</option><option value="out_for_delivery">Out for delivery</option><option value="delivered">Delivered</option><option value="exception">Exception</option><option value="returned">Returned</option></select></div>
+</div>
+<button class="btn" id="shipmentCreateButton" type="submit">Add shipment</button>
+</form>
+<p id="shipmentMessage" class="muted" role="status" aria-live="polite"></p>
+<div id="shipmentList"><p class="muted">Loading shipments…</p></div>
 </section>
 <div class="grid">
 <section class="panel">
@@ -84,6 +130,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <script>
 let latestReply='';
 let allTickets=[];
+let currentUser=null;
 const configs={
  delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review immediately',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check with the carrier for the latest movement status.\n\nWe’ll share an update as soon as the shipment status is confirmed. Thank you for your patience.\n\nVAMSEE Support'},
  tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\n\nThanks for contacting us about shipment '+t+'. Tracking events can sometimes take time to appear after a carrier scan. We’ve marked this for a tracking-status check and recommend reviewing the next scan update.\n\nWe’ll keep you informed if the status remains unchanged.\n\nVAMSEE Support'},
@@ -91,6 +138,104 @@ const configs={
  address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\n\nWe’ve received your address correction request for shipment '+t+'. Our team needs to verify whether the parcel is still eligible for an address update before dispatch or final-mile processing.\n\nPlease share the corrected address through the verified support channel.\n\nVAMSEE Support'},
  damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request photos and escalate',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry the parcel associated with shipment '+t+' appears to be damaged. We’ve flagged this for our claims team. Please keep the packaging and item, and share clear photos of the outer packaging, shipping label and damaged item through the verified support channel.\n\nOur team will review the details and guide you on the next steps.\n\nVAMSEE Support'}
 };
+const ADMIN_ROLE_OPTIONS={
+ platform_admin:["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+ org_admin:["seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+ seller_admin:["seller_operator","viewer"],
+ logistics_manager:["logistics_agent","viewer"],
+ courier_manager:["courier_operator","viewer"]
+};
+async function loadUsers(){
+ const box=document.getElementById("userDirectory");if(!box)return;
+ try{
+  const response=await fetch("/api/users",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load users");
+  if(!Array.isArray(data.users)||!data.users.length){box.innerHTML="<p class='muted'>No team accounts found.</p>";return;}
+  const table=document.createElement("table");table.style.width="100%";table.style.borderCollapse="collapse";
+  const head=document.createElement("tr");
+  ["Name","Email","Role","Status"].forEach(label=>{const th=document.createElement("th");th.textContent=label;th.style.textAlign="left";th.style.padding="9px 6px";th.style.borderBottom="1px solid var(--line)";head.appendChild(th);});table.appendChild(head);
+  data.users.forEach(user=>{const row=document.createElement("tr");[user.full_name,user.email,user.role,user.status].forEach(value=>{const td=document.createElement("td");td.textContent=String(value||"");td.style.padding="9px 6px";td.style.borderBottom="1px solid var(--line)";row.appendChild(td);});table.appendChild(row);});
+  box.replaceChildren(table);
+ }catch(error){box.textContent="User directory unavailable: "+error.message;}
+}
+async function createUser(event){
+ event.preventDefault();
+ const button=document.getElementById("createUserButton"),message=document.getElementById("userAdminMessage");
+ button.disabled=true;message.textContent="Creating account…";
+ const payload={full_name:document.getElementById("newUserName").value.trim(),email:document.getElementById("newUserEmail").value.trim(),role:document.getElementById("newUserRole").value,temporary_password:document.getElementById("newUserPassword").value};
+ try{
+  const response=await fetch("/api/users",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Account creation failed");
+  document.getElementById("userCreateForm").reset();message.textContent="Account created for "+data.user.email+". Share the temporary password through a separate secure channel.";
+  await loadUsers();
+ }catch(error){message.textContent=error.message;}
+ finally{button.disabled=false;}
+}
+function configureUserAdmin(){
+ const panel=document.getElementById("userAdminPanel"),role=currentUser?.role,options=ADMIN_ROLE_OPTIONS[role]||[];
+ if(!options.length){panel.style.display="none";return;}
+ panel.style.display="block";
+ const select=document.getElementById("newUserRole");
+ select.replaceChildren(...options.map(roleName=>{const option=document.createElement("option");option.value=roleName;option.textContent=roleName.replaceAll("_"," ");return option;}));
+ loadUsers();
+}
+
+function shipmentCanEdit(){
+ return !currentUser||["platform_admin","org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator"].includes(currentUser.role);
+}
+async function loadShipmentEvents(shipmentId,box){
+ box.textContent="Loading events…";
+ try{
+  const response=await fetch("/api/shipments/"+encodeURIComponent(shipmentId)+"/events",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load events");
+  box.replaceChildren();
+  if(!data.events?.length){box.textContent="No tracking events recorded yet.";return;}
+  data.events.forEach(item=>{const row=document.createElement("p");row.className="muted";row.style.fontSize="12px";row.textContent=new Date(item.event_time).toLocaleString()+" · "+item.event_status.replaceAll("_"," ")+" · "+item.description+(item.location?" · "+item.location:"");box.appendChild(row);});
+ }catch(error){box.textContent=error.message;}
+}
+async function loadShipments(){
+ const box=document.getElementById("shipmentList");if(!box)return;
+ try{
+  const response=await fetch("/api/shipments",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load shipments");
+  box.replaceChildren();
+  if(!Array.isArray(data.shipments)||!data.shipments.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No shipments recorded yet.";box.appendChild(empty);return;}
+  data.shipments.forEach(shipment=>{
+   const card=document.createElement("div");card.className="ticket";
+   const heading=document.createElement("b");heading.textContent=shipment.tracking_number;card.appendChild(heading);
+   const detail=document.createElement("p");detail.textContent=(shipment.carrier_code||"Carrier not set")+" · "+shipment.current_status.replaceAll("_"," ")+" · "+shipment.source;card.appendChild(detail);
+   if(shipment.last_tracking_at){const stamp=document.createElement("p");stamp.textContent="Last tracking update: "+new Date(shipment.last_tracking_at).toLocaleString();card.appendChild(stamp);}
+   const historyButton=document.createElement("button");historyButton.type="button";historyButton.className="btn secondary";historyButton.textContent="View tracking history";historyButton.style.marginRight="8px";
+   const history=document.createElement("div");history.style.display="none";history.style.marginTop="10px";
+   historyButton.addEventListener("click",()=>{history.style.display=history.style.display==="none"?"block":"none";if(history.style.display==="block")loadShipmentEvents(shipment.id,history);});
+   card.appendChild(historyButton);card.appendChild(history);
+   if(shipmentCanEdit()){
+    const eventButton=document.createElement("button");eventButton.type="button";eventButton.className="btn secondary";eventButton.textContent="Add tracking update";
+    const eventForm=document.createElement("form");eventForm.style.display="none";eventForm.style.marginTop="10px";
+    const status=document.createElement("select");["created","picked_up","in_transit","out_for_delivery","delivered","exception","returned"].forEach(value=>{const option=document.createElement("option");option.value=value;option.textContent=value.replaceAll("_"," ");status.appendChild(option);});
+    const description=document.createElement("input");description.required=true;description.maxLength=500;description.placeholder="Scan details / event description";description.style.marginTop="8px";
+    const location=document.createElement("input");location.maxLength=120;location.placeholder="Location (optional)";location.style.marginTop="8px";
+    const submit=document.createElement("button");submit.type="submit";submit.className="btn";submit.textContent="Save tracking update";
+    eventForm.append(status,description,location,submit);
+    eventButton.addEventListener("click",()=>{eventForm.style.display=eventForm.style.display==="none"?"block":"none";});
+    eventForm.addEventListener("submit",async event=>{event.preventDefault();submit.disabled=true;try{const res=await fetch("/api/shipments/"+encodeURIComponent(shipment.id)+"/events",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({event_status:status.value,description:description.value.trim(),location:location.value.trim()})});const result=await res.json();if(!res.ok)throw new Error(result.error||"Could not save event");await loadShipments();}catch(error){submit.disabled=false;submit.textContent=error.message;}});
+    card.append(eventButton,eventForm);
+   }
+   box.appendChild(card);
+  });
+ }catch(error){box.textContent="Shipment list unavailable: "+error.message;}
+}
+async function createShipment(event){
+ event.preventDefault();const button=document.getElementById("shipmentCreateButton"),message=document.getElementById("shipmentMessage");
+ button.disabled=true;message.textContent="Saving shipment…";
+ try{
+  const response=await fetch("/api/shipments",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({tracking_number:document.getElementById("shipmentTracking").value.trim(),carrier_code:document.getElementById("shipmentCarrier").value.trim(),current_status:document.getElementById("shipmentStatus").value})});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not create shipment");
+  document.getElementById("shipmentCreateForm").reset();message.textContent="Shipment added.";await loadShipments();
+ }catch(error){message.textContent=error.message;}
+ finally{button.disabled=false;}
+}
+
 function escapeHTML(value){
  return String(value == null ? '' : value).replace(/[&<>"']/g,function(ch){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -186,15 +331,21 @@ function applyTicketFilters(){
 async function loadTickets(){
  const q=document.getElementById('queue');q.innerHTML='<p class="muted">Loading live tickets…</p>';
  try{
-  const escalationResponse=await fetch('/api/escalations/run',{method:'POST',headers:{'Accept':'application/json'}});
-  if(!escalationResponse.ok){const escalationError=await escalationResponse.json().catch(()=>({}));throw new Error(escalationError.error||'Automatic escalation check failed (HTTP '+escalationResponse.status+')');}
-  const escalationData=await escalationResponse.json();
+  // Read-only viewers can see the queue but cannot run escalation mutations.
+  const canRunEscalations=!currentUser||['platform_admin','org_admin','logistics_manager','seller_admin','courier_manager'].includes(currentUser.role);
+  let escalatedCount=0;
+  if(canRunEscalations){
+   const escalationResponse=await fetch('/api/escalations/run',{method:'POST',headers:{'Accept':'application/json'}});
+   if(!escalationResponse.ok){const escalationError=await escalationResponse.json().catch(()=>({}));throw new Error(escalationError.error||'Automatic escalation check failed (HTTP '+escalationResponse.status+')');}
+   const escalationData=await escalationResponse.json();
+   escalatedCount=Number(escalationData.escalated||0);
+  }
   const response=await fetch('/api/tickets',{headers:{'Accept':'application/json'},cache:'no-store'});
   const data=await response.json();
-  if(!response.ok)throw new Error(data.error||'Could not load tickets (HTTP '+response.status+')');
+  if(!response.ok)throw new Error(data.error||'Could not load live tickets (HTTP '+response.status+')');
   if(!Array.isArray(data.tickets))throw new Error('Unexpected response from ticket API');
   renderTickets(data.tickets);
-  if(escalationData.escalated>0){const notice=document.createElement('p');notice.className='pill auto';notice.textContent=escalationData.escalated+' HIGH-priority ticket(s) automatically moved to Priority Escalations.';document.getElementById('queue').prepend(notice);}
+  if(escalatedCount>0){const notice=document.createElement('p');notice.className='pill auto';notice.textContent=escalatedCount+' HIGH-priority ticket(s) automatically moved to Priority Escalations.';document.getElementById('queue').prepend(notice);}
  }catch(error){
   q.innerHTML='<p class="muted">Unable to load live tickets: '+escapeHTML(error.message)+'</p><button class="btn secondary" type="button" onclick="loadTickets()">Retry</button>';
  }
@@ -249,11 +400,13 @@ function copyReply(){
 async function checkSession(){
  const gate=document.getElementById('loginGate'),app=document.getElementById('appContent');
  try{
-  const response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});
-  const data=await response.json();
+  let response=await fetch('/api/auth/session',{headers:{'Accept':'application/json'},cache:'no-store'});
+  let data=await response.json();
+  if(!data.authenticated){response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});data=await response.json();}
   if(response.ok&&data.authenticated){
-   gate.style.display='none';app.classList.add('authenticated');loadTickets();return;
+   currentUser=data.user||null;configureUserAdmin();document.getElementById('shipmentCreateForm').style.display=shipmentCanEdit()?'block':'none';gate.style.display='none';app.classList.add('authenticated');loadTickets();loadShipments();return;
   }
+  currentUser=null;document.getElementById('userAdminPanel').style.display='none';
   gate.style.display='block';app.classList.remove('authenticated');
   if(!response.ok&&data.configured===false)document.getElementById('loginError').textContent='Setup required: configure the two VAMSEE secrets in Cloudflare Worker settings.';
  }catch(error){
@@ -261,12 +414,33 @@ async function checkSession(){
   document.getElementById('loginError').textContent='Unable to verify your session. Refresh and try again.';
  }
 }
+async function bootstrapAdmin(event){
+ event.preventDefault();
+ const button=document.getElementById('bootstrapButton'),errorBox=document.getElementById('loginError');
+ button.disabled=true;button.textContent='Creating owner account…';errorBox.textContent='';
+ try{
+  const response=await fetch('/api/auth/bootstrap',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({
+   token:document.getElementById('bootstrapToken').value,
+   full_name:document.getElementById('bootstrapName').value.trim(),
+   email:document.getElementById('bootstrapEmail').value.trim(),
+   password:document.getElementById('bootstrapPassword').value
+  })});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Owner account setup failed.');
+  document.getElementById('bootstrapToken').value='';
+  document.getElementById('bootstrapPassword').value='';
+  await checkSession();
+  errorBox.textContent='Owner account created. Remove VAMSEE_BOOTSTRAP_TOKEN from Cloudflare secrets now.';
+ }catch(error){errorBox.textContent=error.message;}
+ finally{button.disabled=false;button.textContent='Create owner account';}
+}
 async function login(event){
  event.preventDefault();
  const button=document.getElementById('loginButton'),errorBox=document.getElementById('loginError');
  button.disabled=true;button.textContent='Signing in…';errorBox.textContent='';
  try{
-  const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({password:document.getElementById('accessPassword').value})});
+  const email=document.getElementById('loginEmail').value.trim();
+  const response=await fetch(email?'/api/auth/login':'/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(email?{email:email,password:document.getElementById('accessPassword').value}:{password:document.getElementById('accessPassword').value})});
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Sign-in failed.');
   document.getElementById('accessPassword').value='';
@@ -275,7 +449,8 @@ async function login(event){
  finally{button.disabled=false;button.textContent='Sign in securely';}
 }
 async function logout(){
- try{await fetch('/api/logout',{method:'POST',headers:{'Accept':'application/json'}});}catch(error){}
+ try{await fetch('/api/auth/logout',{method:'POST',headers:{'Accept':'application/json'}});await fetch('/api/logout',{method:'POST',headers:{'Accept':'application/json'}});}catch(error){}
+ currentUser=null;document.getElementById('userAdminPanel').style.display='none';
  document.getElementById('appContent').classList.remove('authenticated');
  document.getElementById('appContent').style.display='none';
  document.getElementById('loginGate').style.display='block';
@@ -284,6 +459,9 @@ async function logout(){
 document.addEventListener('DOMContentLoaded',function(){
  ['ticketSearch','priorityFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='ticketSearch'?'input':'change',applyTicketFilters));
  document.getElementById('loginForm').addEventListener('submit',login);
+ document.getElementById('bootstrapForm').addEventListener('submit',bootstrapAdmin);
+ document.getElementById('userCreateForm').addEventListener('submit',createUser);
+ document.getElementById('shipmentCreateForm').addEventListener('submit',createShipment);
  checkSession();
 });
 </script>
