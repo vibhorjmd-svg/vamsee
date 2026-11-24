@@ -115,7 +115,7 @@ export default {
 Required JSON keys: priority, assigned_queue, next_action, customer_reply, reason.
 priority must be exactly HIGH, MEDIUM, or NORMAL.
 Choose HIGH for delivery marked delivered but not received, damaged parcels, or serious shipment delays; MEDIUM for stale tracking; NORMAL for address changes unless the message indicates urgency.
-Use a concise, empathetic customer reply. Do not claim you checked a carrier system, do not invent shipment scans or delivery facts, do not promise a resolution time, and do not ask for sensitive payment/password information. For damage, ask the customer to preserve packaging and share photos through the verified support channel. For address changes, say eligibility must be checked before promising a change.
+Write the customer_reply in professional, natural business English suitable for a logistics company's customer support email. Start with "Hello [customer name]," when a customer name is provided, otherwise "Hello,". Never use intimate, romantic, overly familiar, slang, or pet-name greetings/terms (including "love", "dear", "buddy", or "honey"). Keep the reply concise, empathetic, clear, and action-oriented. Do not claim you checked a carrier system, do not invent shipment scans or delivery facts, do not promise a resolution time, and do not ask for sensitive payment/password information. For damage, ask the customer to preserve packaging and share photos through the verified support channel. For address changes, say eligibility must be checked before promising a change.
 Customer name: ${input.customer_name.trim().slice(0,100)}
 Tracking/AWB: ${input.tracking_number.trim().slice(0,100) || "Not provided"}
 Enquiry type: ${issueLabels[input.issue_type]}
