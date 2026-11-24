@@ -1,10 +1,11 @@
-name = "vamsee-logistics"
+name = "black-smoke-f08f"
 main = "worker.js"
 compatibility_date = "2026-11-24"
 
 [assets]
 directory = "./public"
 binding = "ASSETS"
+run_worker_first = ["/api/*"]
 
 [[d1_databases]]
 binding = "DB"
