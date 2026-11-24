@@ -142,6 +142,24 @@ export default {
     const organizationId=member?.organization_id||DEMO_ORG_ID, role=member?.role||"platform_admin";
     const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
+
+    if(request.method==="POST"&&url.pathname==="/api/users"){
+      if(!canManage)return json({error:"Only workspace administrators can create users."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.temporary_password==="string"?b.temporary_password:"",newRole=String(b.role||"");
+      const allowed=["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"];
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128||!allowed.includes(newRole))return json({error:"Provide valid user details, a 12–128 character temporary password, and an allowed role."},400);
+      if(role!=="platform_admin"&&newRole==="org_admin")return json({error:"Only the platform administrator can assign workspace-admin access."},403);
+      const existing=await env.DB.prepare("SELECT id FROM users WHERE email=? COLLATE NOCASE").bind(email).first();
+      if(existing)return json({error:"A user with this email already exists."},409);
+      const id="usr_"+crypto.randomUUID(),now=new Date().toISOString(),ph=await hashPassword(pass);
+      await env.DB.batch([
+        env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(id,email,name,ph,now,now),
+        env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,?,'active')").bind("mem_"+crypto.randomUUID(),organizationId,id,newRole),
+        env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'user.created','user',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,authContext?.user_id||null,id,JSON.stringify({role:newRole,email}))
+      ]);
+      return json({ok:true,user:{id,email,full_name:name,role:newRole},message:"Account created. Share the temporary password through a separate secure channel."},201);
+    }
     if (request.method === "GET" && url.pathname === "/api/health") {
       return json({ ok: true, service: "VAMSEE ticket API" });
     }
