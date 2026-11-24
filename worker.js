@@ -168,6 +168,19 @@ Return only JSON.`;
         return json({ error: "AI processing failed: " + error.message }, 502);
       }
     }
+    if (request.method === "POST" && url.pathname === "/api/escalations/run") {
+      const now = new Date();
+      const cutoff = new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString();
+      const result = await env.DB.prepare(`UPDATE tickets
+        SET assigned_queue = 'Priority Escalations',
+            next_action = 'Auto-escalated: HIGH-priority ticket exceeded the 4-hour demo SLA. Review the case and contact the carrier/customer.'
+        WHERE priority = 'HIGH'
+          AND status IN ('OPEN', 'IN_PROGRESS')
+          AND created_at <= ?
+          AND assigned_queue != 'Priority Escalations'`)
+        .bind(cutoff).run();
+      return json({ ok: true, escalated: result.meta.changes || 0, checked_at: now.toISOString() });
+    }
     if (request.method === "GET" && url.pathname === "/api/tickets") {
       const status = url.searchParams.get("status");
       const priority = url.searchParams.get("priority");
