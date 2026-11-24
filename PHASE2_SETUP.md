@@ -54,3 +54,6 @@ Passwords are stored as PBKDF2-HMAC-SHA-256 hashes with per-user random salts. S
 
 ### Regression checks
 Run `npm test` before merging. The built-in Node test suite checks JavaScript syntax, password hashing, session validation, one-time bootstrap, role assignment boundaries, tenant-scoped queries, and same-origin mutation protection. These are source-level regression checks; live D1 and browser integration tests are still required before production use.
+
+
+Individual account sessions take precedence over the legacy shared-password session. If an individual session is present but invalid or revoked, the legacy session is not accepted as a fallback; users must sign out fully before switching authentication modes.
