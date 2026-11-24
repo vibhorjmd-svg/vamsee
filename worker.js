@@ -65,7 +65,8 @@ export default {
       return env.ASSETS.fetch(request);
     }
 
-    // Individual account endpoints.\n
+    // Individual account endpoints.
+
     if(url.pathname==="/api/auth/bootstrap"&&request.method==="POST"){
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
       if(!env.DB||!env.VAMSEE_BOOTSTRAP_TOKEN||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Bootstrap secrets or database are not configured."},503);
@@ -102,7 +103,8 @@ export default {
       const u=await env.DB.prepare("SELECT u.id,u.email,u.full_name,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first();
       return json(u?{authenticated:true,user:u}:{authenticated:false});
     }
-\n    // Legacy demo login remains available during migration.
+
+    // Legacy demo login remains available during migration.
     if (url.pathname === "/api/login" && request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
       if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
@@ -233,7 +235,8 @@ Return only JSON.`;
         return json({ error: "AI processing failed: " + error.message }, 502);
       }
     }
-    if (request.method === "POST" && url.pathname === "/api/escalations/run") {\n      if(!canManage)return json({error:"Your role cannot run escalations."},403);
+    if (request.method === "POST" && url.pathname === "/api/escalations/run") {
+      if(!canManage)return json({error:"Your role cannot run escalations."},403);
       const now = new Date();
       const cutoff = new Date(now.getTime() - 4 * 60 * 60 * 1000).toISOString();
       const result = await env.DB.prepare(`UPDATE tickets
@@ -259,7 +262,8 @@ Return only JSON.`;
       const { results } = await env.DB.prepare(sql).bind(...values).all();
       return json({ tickets: results });
     }
-    if (request.method === "POST" && url.pathname === "/api/tickets") {\n      if(!canOperate)return json({error:"Your role cannot create tickets."},403);
+    if (request.method === "POST" && url.pathname === "/api/tickets") {
+      if(!canOperate)return json({error:"Your role cannot create tickets."},403);
       let t;
       try { t = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       const required = ["id","customer_name","tracking_number","issue_type","priority","assigned_queue","next_action","customer_reply"];
@@ -280,7 +284,8 @@ Return only JSON.`;
       return json({ ok: true, id: t.id }, 201);
     }
     const match = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
-    if (request.method === "PATCH" && match) {\n      if(!canOperate)return json({error:"Your role cannot update tickets."},403);
+    if (request.method === "PATCH" && match) {
+      if(!canOperate)return json({error:"Your role cannot update tickets."},403);
       let body;
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       if (!["OPEN","IN_PROGRESS","RESOLVED"].includes(body.status)) return json({ error: "Invalid status." }, 400);
