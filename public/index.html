@@ -34,6 +34,21 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · LOGISTICS OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
 <h1>Shipment support, <span style="color:var(--lime)">without the manual chase.</span></h1>
 <p class="sub">A practical preview of how an AI-assisted workflow can classify shipment enquiries, draft customer replies and flag cases that need an operations team's attention.</p>
+<section class="panel" id="userAdminPanel" style="display:none;margin-bottom:18px" aria-labelledby="userAdminTitle">
+<h2 id="userAdminTitle">Workspace access management</h2>
+<p class="muted" style="font-size:13px">Create team accounts with least-privilege access. Share temporary passwords separately.</p>
+<form id="userCreateForm">
+<div class="sla-grid">
+<div><label for="newUserName">Full name</label><input id="newUserName" required maxlength="120" autocomplete="name"></div>
+<div><label for="newUserEmail">Work email</label><input id="newUserEmail" type="email" required maxlength="254" autocomplete="off"></div>
+<div><label for="newUserRole">Access role</label><select id="newUserRole" required></select></div>
+</div>
+<label for="newUserPassword">Temporary password (minimum 12 characters)</label><input id="newUserPassword" type="password" required minlength="12" maxlength="128" autocomplete="new-password">
+<button class="btn" id="createUserButton" type="submit">Create team account</button>
+</form>
+<p id="userAdminMessage" class="muted" role="status" aria-live="polite"></p>
+<div id="userDirectory"><p class="muted">Loading workspace users…</p></div>
+</section>
 <div class="metrics">
 <div class="metric"><strong id="total">00</strong><small>Total tickets</small></div>
 <div class="metric"><strong id="urgent">00</strong><small>Open escalations</small></div>
@@ -86,6 +101,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <script>
 let latestReply='';
 let allTickets=[];
+let currentUser=null;
 const configs={
  delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review immediately',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check with the carrier for the latest movement status.\n\nWe’ll share an update as soon as the shipment status is confirmed. Thank you for your patience.\n\nVAMSEE Support'},
  tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\n\nThanks for contacting us about shipment '+t+'. Tracking events can sometimes take time to appear after a carrier scan. We’ve marked this for a tracking-status check and recommend reviewing the next scan update.\n\nWe’ll keep you informed if the status remains unchanged.\n\nVAMSEE Support'},
@@ -93,6 +109,48 @@ const configs={
  address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\n\nWe’ve received your address correction request for shipment '+t+'. Our team needs to verify whether the parcel is still eligible for an address update before dispatch or final-mile processing.\n\nPlease share the corrected address through the verified support channel.\n\nVAMSEE Support'},
  damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request photos and escalate',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry the parcel associated with shipment '+t+' appears to be damaged. We’ve flagged this for our claims team. Please keep the packaging and item, and share clear photos of the outer packaging, shipping label and damaged item through the verified support channel.\n\nOur team will review the details and guide you on the next steps.\n\nVAMSEE Support'}
 };
+const ADMIN_ROLE_OPTIONS={
+ platform_admin:["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+ org_admin:["seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+ seller_admin:["seller_operator","viewer"],
+ logistics_manager:["logistics_agent","viewer"],
+ courier_manager:["courier_operator","viewer"]
+};
+async function loadUsers(){
+ const box=document.getElementById("userDirectory");if(!box)return;
+ try{
+  const response=await fetch("/api/users",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load users");
+  if(!Array.isArray(data.users)||!data.users.length){box.innerHTML="<p class='muted'>No team accounts found.</p>";return;}
+  const table=document.createElement("table");table.style.width="100%";table.style.borderCollapse="collapse";
+  const head=document.createElement("tr");
+  ["Name","Email","Role","Status"].forEach(label=>{const th=document.createElement("th");th.textContent=label;th.style.textAlign="left";th.style.padding="9px 6px";th.style.borderBottom="1px solid var(--line)";head.appendChild(th);});table.appendChild(head);
+  data.users.forEach(user=>{const row=document.createElement("tr");[user.full_name,user.email,user.role,user.status].forEach(value=>{const td=document.createElement("td");td.textContent=String(value||"");td.style.padding="9px 6px";td.style.borderBottom="1px solid var(--line)";row.appendChild(td);});table.appendChild(row);});
+  box.replaceChildren(table);
+ }catch(error){box.textContent="User directory unavailable: "+error.message;}
+}
+async function createUser(event){
+ event.preventDefault();
+ const button=document.getElementById("createUserButton"),message=document.getElementById("userAdminMessage");
+ button.disabled=true;message.textContent="Creating account…";
+ const payload={full_name:document.getElementById("newUserName").value.trim(),email:document.getElementById("newUserEmail").value.trim(),role:document.getElementById("newUserRole").value,temporary_password:document.getElementById("newUserPassword").value};
+ try{
+  const response=await fetch("/api/users",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Account creation failed");
+  document.getElementById("userCreateForm").reset();message.textContent="Account created for "+data.user.email+". Share the temporary password through a separate secure channel.";
+  await loadUsers();
+ }catch(error){message.textContent=error.message;}
+ finally{button.disabled=false;}
+}
+function configureUserAdmin(){
+ const panel=document.getElementById("userAdminPanel"),role=currentUser?.role,options=ADMIN_ROLE_OPTIONS[role]||[];
+ if(!options.length){panel.style.display="none";return;}
+ panel.style.display="block";
+ const select=document.getElementById("newUserRole");
+ select.replaceChildren(...options.map(roleName=>{const option=document.createElement("option");option.value=roleName;option.textContent=roleName.replaceAll("_"," ");return option;}));
+ loadUsers();
+}
+
 function escapeHTML(value){
  return String(value == null ? '' : value).replace(/[&<>"']/g,function(ch){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch];
@@ -255,8 +313,9 @@ async function checkSession(){
   let data=await response.json();
   if(!data.authenticated){response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});data=await response.json();}
   if(response.ok&&data.authenticated){
-   gate.style.display='none';app.classList.add('authenticated');loadTickets();return;
+   currentUser=data.user||null;configureUserAdmin();gate.style.display='none';app.classList.add('authenticated');loadTickets();return;
   }
+  currentUser=null;document.getElementById('userAdminPanel').style.display='none';
   gate.style.display='block';app.classList.remove('authenticated');
   if(!response.ok&&data.configured===false)document.getElementById('loginError').textContent='Setup required: configure the two VAMSEE secrets in Cloudflare Worker settings.';
  }catch(error){
@@ -280,6 +339,7 @@ async function login(event){
 }
 async function logout(){
  try{await fetch('/api/auth/logout',{method:'POST',headers:{'Accept':'application/json'}});await fetch('/api/logout',{method:'POST',headers:{'Accept':'application/json'}});}catch(error){}
+ currentUser=null;document.getElementById('userAdminPanel').style.display='none';
  document.getElementById('appContent').classList.remove('authenticated');
  document.getElementById('appContent').style.display='none';
  document.getElementById('loginGate').style.display='block';
@@ -288,6 +348,7 @@ async function logout(){
 document.addEventListener('DOMContentLoaded',function(){
  ['ticketSearch','priorityFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='ticketSearch'?'input':'change',applyTicketFilters));
  document.getElementById('loginForm').addEventListener('submit',login);
+ document.getElementById('userCreateForm').addEventListener('submit',createUser);
  checkSession();
 });
 </script>
