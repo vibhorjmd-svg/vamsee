@@ -200,10 +200,17 @@ Return only JSON.`;
       if (required.some(k => typeof t[k] !== "string" || !t[k].trim())) return json({ error: "Missing required ticket fields." }, 400);
       if (!["HIGH","MEDIUM","NORMAL"].includes(t.priority)) return json({ error: "Invalid priority." }, 400);
       const now = new Date().toISOString();
+      let lastTrackingAt = null;
+      if (t.last_tracking_at != null && t.last_tracking_at !== "") {
+        if (typeof t.last_tracking_at !== "string" || !Number.isFinite(Date.parse(t.last_tracking_at))) {
+          return json({ error: "Invalid last tracking movement date." }, 400);
+        }
+        lastTrackingAt = new Date(t.last_tracking_at).toISOString();
+      }
       await env.DB.prepare(`INSERT INTO tickets
-        (id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?)`)
-        .bind(t.id,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now).run();
+        (id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at, last_tracking_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`)
+        .bind(t.id,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
       return json({ ok: true, id: t.id }, 201);
     }
     const match = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
