@@ -22,7 +22,9 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
   <h1 id="loginTitle">Private operations workspace</h1>
   <p>Sign in to access the VAMSEE logistics operations dashboard.</p>
   <form id="loginForm">
-    <label for="accessPassword">Access password</label>
+    <label for="loginEmail">Work email (leave blank for legacy demo login)</label>
+    <input id="loginEmail" type="email" autocomplete="username" maxlength="254">
+    <label for="accessPassword">Password</label>
     <input id="accessPassword" type="password" autocomplete="current-password" required maxlength="256">
     <button class="btn" id="loginButton" type="submit">Sign in securely</button>
   </form>
@@ -249,8 +251,9 @@ function copyReply(){
 async function checkSession(){
  const gate=document.getElementById('loginGate'),app=document.getElementById('appContent');
  try{
-  const response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});
-  const data=await response.json();
+  let response=await fetch('/api/auth/session',{headers:{'Accept':'application/json'},cache:'no-store'});
+  let data=await response.json();
+  if(!data.authenticated){response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});data=await response.json();}
   if(response.ok&&data.authenticated){
    gate.style.display='none';app.classList.add('authenticated');loadTickets();return;
   }
@@ -266,7 +269,8 @@ async function login(event){
  const button=document.getElementById('loginButton'),errorBox=document.getElementById('loginError');
  button.disabled=true;button.textContent='Signing in…';errorBox.textContent='';
  try{
-  const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({password:document.getElementById('accessPassword').value})});
+  const email=document.getElementById('loginEmail').value.trim();
+  const response=await fetch(email?'/api/auth/login':'/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(email?{email:email,password:document.getElementById('accessPassword').value}:{password:document.getElementById('accessPassword').value})});
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Sign-in failed.');
   document.getElementById('accessPassword').value='';
@@ -275,7 +279,7 @@ async function login(event){
  finally{button.disabled=false;button.textContent='Sign in securely';}
 }
 async function logout(){
- try{await fetch('/api/logout',{method:'POST',headers:{'Accept':'application/json'}});}catch(error){}
+ try{await fetch('/api/auth/logout',{method:'POST',headers:{'Accept':'application/json'}});await fetch('/api/logout',{method:'POST',headers:{'Accept':'application/json'}});}catch(error){}
  document.getElementById('appContent').classList.remove('authenticated');
  document.getElementById('appContent').style.display='none';
  document.getElementById('loginGate').style.display='block';
