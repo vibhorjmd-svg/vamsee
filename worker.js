@@ -60,8 +60,8 @@ Return only JSON.`;
         if (typeof result === "string") candidates.unshift(result);
         let suggestion = null;
         for (const candidate of candidates) {
-          const cleaned = candidate.replace(/<think>[\\s\\S]*?<\\/think>/gi, "").trim();
-          const match = cleaned.match(/\\{[\\s\\S]*\\}/);
+          const cleaned = candidate.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+          const match = cleaned.match(/\{[\s\S]*\}/);
           if (!match) continue;
           try { suggestion = JSON.parse(match[0]); break; } catch {}
         }
