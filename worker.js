@@ -111,29 +111,12 @@ export default {
       return json(u?{authenticated:true,user:u}:{authenticated:false});
     }
 
-    // Legacy demo login remains available during migration.
+    // Retire the shared-password login. All workspace access now uses named accounts.
     if (url.pathname === "/api/login" && request.method === "POST") {
-      if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
-      if (!env.VAMSEE_ACCESS_PASSWORD || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
-        return json({ error: "Access controls are not configured. Set VAMSEE_ACCESS_PASSWORD and a 32+ character VAMSEE_SESSION_SECRET in Worker secrets." }, 503);
-      }
-      let body;
-      try { body = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
-      if (typeof body.password !== "string" || body.password.length > 256 ||
-          !(await passwordMatches(body.password, env.VAMSEE_ACCESS_PASSWORD))) {
-        return json({ error: "Incorrect password." }, 401);
-      }
-      const token = await createSession(env.VAMSEE_SESSION_SECRET);
-      return json({ ok: true }, 200, {
-        "Set-Cookie": SESSION_COOKIE + "=" + token + "; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=" + SESSION_SECONDS
-      });
+      return json({ error: "Shared-password login is disabled. Sign in with your work email." }, 410);
     }
     if (url.pathname === "/api/session" && request.method === "GET") {
-      if (!env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
-        return json({ authenticated: false, configured: false }, 503);
-      }
-      const hasUserCookie=(request.headers.get("Cookie")||"").split(";").some(v=>v.trim().startsWith(USER_SESSION_COOKIE+"="));
-      return json({ authenticated: !hasUserCookie && await validSession(request, env.VAMSEE_SESSION_SECRET), configured: true });
+      return json({ authenticated: false, configured: true });
     }
     if (url.pathname === "/api/logout" && request.method === "POST") {
       if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
@@ -146,11 +129,9 @@ export default {
     if(!env.DB)return json({error:"Database binding DB is not configured."},503);
     const p=await userPayload(request,env.VAMSEE_SESSION_SECRET);
     const member=p?await env.DB.prepare("SELECT m.organization_id,m.role FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'").bind(p.user_id,p.organization_id).first():null;
-    const hasUserCookie=(request.headers.get("Cookie")||"").split(";").some(v=>v.trim().startsWith(USER_SESSION_COOKIE+"="));
-    const legacy=!hasUserCookie&&!member&&env.VAMSEE_ACCESS_PASSWORD&&await validSession(request,env.VAMSEE_SESSION_SECRET);
-    if(!member&&!legacy)return json({error:"Authentication required."},401);
+    if(!member)return json({error:"Authentication required."},401);
     if(["POST","PATCH","PUT","DELETE"].includes(request.method)&&!sameOrigin(request))return json({error:"Request origin rejected."},403);
-    const organizationId=member?.organization_id||DEMO_ORG_ID, role=member?.role||"platform_admin";
+    const organizationId=member.organization_id, role=member.role;
     const canManage=["platform_admin","org_admin","logistics_manager","seller_admin","courier_manager"].includes(role);
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
 
@@ -197,9 +178,7 @@ export default {
         "SELECT m.organization_id FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'"
       ).bind(assistPayload.user_id, assistPayload.organization_id).first() : null;
       const hasIndividualCookie = (request.headers.get("Cookie") || "").split(";").some(v => v.trim().startsWith(USER_SESSION_COOKIE + "="));
-      const hasLegacySession = !hasIndividualCookie && env.VAMSEE_ACCESS_PASSWORD &&
-        await validSession(request, env.VAMSEE_SESSION_SECRET);
-      if (!assistMember && !hasLegacySession) return json({ error: "Authentication required." }, 401);
+      if (!assistMember) return json({ error: "Authentication required." }, 401);
       if (!canOperate) return json({ error: "Your role cannot use AI assistance." }, 403);
       let input;
       try { input = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
