@@ -46,6 +46,13 @@ test("Ticket access is scoped to the authenticated organization", () => {
   assert.ok(worker.includes("AND organization_id = ?"));
 });
 
+test("Shipment registry and tracking events are tenant-scoped", () => {
+  assert.ok(worker.includes("url.pathname===\"/api/shipments\""));
+  assert.ok(worker.includes("WHERE organization_id=? ORDER BY updated_at DESC"));
+  assert.ok(worker.includes("shipment_events WHERE shipment_id=? AND organization_id=?"));
+  assert.ok(worker.includes("Your role cannot add shipment events."));
+});
+
 test("Mutating API requests enforce same-origin checks", () => {
   assert.ok(worker.includes('includes(request.method)&&!sameOrigin(request)'));
 });
