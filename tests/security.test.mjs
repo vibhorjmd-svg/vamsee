@@ -56,3 +56,8 @@ test("Shipment registry and tracking events are tenant-scoped", () => {
 test("Mutating API requests enforce same-origin checks", () => {
   assert.ok(worker.includes('includes(request.method)&&!sameOrigin(request)'));
 });
+
+
+test("AI assistance is restricted to operational roles", () => {
+  assert.ok(worker.includes('if (!canOperate) return json({ error: "Your role cannot use AI assistance." }, 403);'));
+});
