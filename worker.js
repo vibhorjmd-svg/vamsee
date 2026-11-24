@@ -76,11 +76,12 @@ export default {
       const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.password==="string"?b.password:"";
       if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128)return json({error:"Enter a valid email, full name and a 12–128 character password."},400);
       const id="usr_"+crypto.randomUUID(),now=new Date().toISOString(),ph=await hashPassword(pass);
-      await env.DB.batch([
+      const setup=await env.DB.batch([
         env.DB.prepare("INSERT OR IGNORE INTO organizations(id,name,slug,organization_type) VALUES(?,?,?,'platform')").bind(DEMO_ORG_ID,"VAMSEE Platform","vamsee-platform"),
-        env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(id,email,name,ph,now,now),
-        env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,'platform_admin','active')").bind("mem_"+crypto.randomUUID(),DEMO_ORG_ID,id)
+        env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) SELECT ?,?,?,?,'active',?,? WHERE NOT EXISTS (SELECT 1 FROM users)").bind(id,email,name,ph,now,now),
+        env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) SELECT ?,?,?, 'platform_admin','active' WHERE EXISTS (SELECT 1 FROM users WHERE id=?)").bind("mem_"+crypto.randomUUID(),DEMO_ORG_ID,id,id)
       ]);
+      if(!setup?.[1]?.meta?.changes)return json({error:"Initial setup has already been completed."},409);
       const t=await userToken({user_id:id,organization_id:DEMO_ORG_ID},env.VAMSEE_SESSION_SECRET);
       return json({ok:true,user:{id,email,full_name:name,role:"platform_admin"}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+t+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
     }
@@ -150,9 +151,16 @@ export default {
       if(!member||!canManage)return json({error:"Only authenticated workspace administrators can create users."},403);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
       const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),pass=typeof b.temporary_password==="string"?b.temporary_password:"",newRole=String(b.role||"");
-      const allowed=["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"];
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128||!allowed.includes(newRole))return json({error:"Provide valid user details, a 12–128 character temporary password, and an allowed role."},400);
-      if(role!=="platform_admin"&&newRole==="org_admin")return json({error:"Only the platform administrator can assign workspace-admin access."},403);
+      const roleAssignments={
+        platform_admin:["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+        org_admin:["seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
+        seller_admin:["seller_operator","viewer"],
+        logistics_manager:["logistics_agent","viewer"],
+        courier_manager:["courier_operator","viewer"]
+      };
+      const assignable=roleAssignments[role]||[];
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||pass.length<12||pass.length>128)return json({error:"Provide valid user details, a 12–128 character temporary password, and an allowed role."},400);
+      if(!assignable.includes(newRole))return json({error:"Your role cannot assign the requested access level."},403);
       const existing=await env.DB.prepare("SELECT id FROM users WHERE email=? COLLATE NOCASE").bind(email).first();
       if(existing)return json({error:"A user with this email already exists."},409);
       const id="usr_"+crypto.randomUUID(),now=new Date().toISOString(),ph=await hashPassword(pass);
