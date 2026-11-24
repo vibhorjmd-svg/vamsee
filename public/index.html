@@ -41,7 +41,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <div class="note"><b>Workflow preview</b><div class="flow"><span class="step">Enquiry received</span><span class="step">Classify issue</span><span class="step">Draft response</span><span class="step">Escalate if needed</span></div></div>
 </section>
 </div>
-<p class="note">Demo notice: This dashboard saves test enquiries to the VAMSEE database. Classification is rule-based; replies are drafts for human review. Authentication is not yet enabled—do not enter real customer or confidential data.</p>
+<p class="note">Demo notice: VAMSEE uses Cloudflare Workers AI to suggest classifications and draft replies when AI is available. All replies require human review. Authentication is not yet enabled—use test data only; do not enter real customer or confidential data.</p>
 </main>
 <script>
 let latestReply='';
@@ -93,13 +93,30 @@ async function updateTicketStatus(id,status,select){
 async function processTicket(){
  const n=document.getElementById('customer').value.trim()||'Customer';
  const t=document.getElementById('tracking').value.trim()||'Not provided';
- const key=document.getElementById('issue').value,msg=document.getElementById('message').value.trim(),c=configs[key];
- latestReply=c.reply(n,t);
- document.getElementById('classification').innerHTML='<span class="pill '+(c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':'')+'">'+c.priority+' PRIORITY</span><span class="pill">'+escapeHTML(key.toUpperCase())+'</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>'+escapeHTML(c.team)+'</b> · Next action: '+escapeHTML(c.sla)+'</p>';
- document.getElementById('reply').textContent=latestReply;
- document.getElementById('actions').innerHTML='<span class="step">1 · Categorised</span><span class="step">2 · Draft prepared</span><span class="step">3 · '+(c.priority==='HIGH'?'Escalation flagged':'Routine queue')+'</span>';
+ const key=document.getElementById('issue').value,msg=document.getElementById('message').value.trim();
+ if(!msg){alert('Please enter the customer message.');return;}
+ const button=document.querySelector('button[onclick="processTicket()"]');
+ button.disabled=true;button.textContent='AI is analysing…';
  document.getElementById('result').style.display='block';
- const button=document.querySelector('button[onclick="processTicket()"]');button.disabled=true;button.textContent='Saving enquiry…';
+ document.getElementById('classification').textContent='Analysing enquiry with VAMSEE AI…';
+ document.getElementById('reply').textContent='';
+ document.getElementById('actions').replaceChildren();
+ let c, source='workers-ai';
+ try{
+  const assistResponse=await fetch('/api/assist',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({customer_name:n,tracking_number:t,issue_type:key,message:msg})});
+  const assist=await assistResponse.json();
+  if(!assistResponse.ok)throw new Error(assist.error||'AI service unavailable');
+  c={priority:assist.priority,team:assist.assigned_queue,sla:assist.next_action,reply:assist.customer_reply,reason:assist.reason};
+ }catch(error){
+  source='rule-based-fallback';
+  const fallback=configs[key];
+  c={priority:fallback.priority,team:fallback.team,sla:fallback.sla,reply:fallback.reply(n,t),reason:'AI unavailable; standard rules used. '+error.message};
+ }
+ latestReply=c.reply;
+ document.getElementById('classification').innerHTML='<span class="pill '+(c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':'')+'">'+escapeHTML(c.priority)+' PRIORITY</span><span class="pill">'+(source==='workers-ai'?'CLOUDFLARE AI':'RULE-BASED FALLBACK')+'</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>'+escapeHTML(c.team)+'</b> · Next action: '+escapeHTML(c.sla)+'</p><p class="muted" style="font-size:12px">Reason: '+escapeHTML(c.reason)+'</p>';
+ document.getElementById('reply').textContent=latestReply;
+ document.getElementById('actions').innerHTML='<span class="step">1 · Enquiry classified</span><span class="step">2 · Reply drafted</span><span class="step">3 · '+(c.priority==='HIGH'?'Escalation flagged':'Routine queue')+'</span>';
+ button.textContent='Saving enquiry…';
  try{
   const id='VAM-'+Date.now();
   const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({id:id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
