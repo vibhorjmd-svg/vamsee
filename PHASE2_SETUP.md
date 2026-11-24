@@ -57,3 +57,10 @@ Run `npm test` before merging. The built-in Node test suite checks JavaScript sy
 
 
 Individual account sessions take precedence over the legacy shared-password session. If an individual session is present but invalid or revoked, the legacy session is not accepted as a fallback; users must sign out fully before switching authentication modes.
+
+### Shipment registry and manual tracking events
+- List shipments in the signed-in organisation: `GET /api/shipments`.
+- Create a shipment: `POST /api/shipments` with `tracking_number`, optional `carrier_code`, and optional `current_status`.
+- View a shipment's event history: `GET /api/shipments/:id/events`.
+- Add a tracking event: `POST /api/shipments/:id/events` with `event_status`, `description`, and optional `location` / `event_time`.
+- Shipment and event writes are tenant-scoped, role-checked, and recorded in the audit log. These are manual operations; live carrier/aggregator integrations are a separate phase.
