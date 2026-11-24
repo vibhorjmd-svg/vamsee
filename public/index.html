@@ -36,16 +36,12 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </section>
 <section class="panel">
 <h2>2. Operations queue</h2>
-<p class="muted" style="margin-top:-8px;font-size:13px">Illustrative tickets generated for this demo.</p>
-<div id="queue">
-<div class="ticket"><div class="tickethead"><b>VMS-20481 · Shipment delayed</b><span class="pill urgent">HIGH</span></div><p>Aarav Mehta · No movement for 3 days</p><span class="pill">Escalate to carrier desk</span></div>
-<div class="ticket"><div class="tickethead"><b>VMS-20476 · Tracking not updated</b><span class="pill medium">MEDIUM</span></div><p>Neha Sharma · Tracking scan pending</p><span class="pill">Check next scan</span></div>
-<div class="ticket"><div class="tickethead"><b>VMS-20465 · Address correction</b><span class="pill">NORMAL</span></div><p>Rohan Gupta · Request received before dispatch</p><span class="pill">Verify address</span></div>
-</div>
+<p class="muted" style="margin-top:-8px;font-size:13px">Live tickets loaded from the VAMSEE database.</p>
+<div id="queue"><p class="muted">Loading live tickets…</p></div>
 <div class="note"><b>Workflow preview</b><div class="flow"><span class="step">Enquiry received</span><span class="step">Classify issue</span><span class="step">Draft response</span><span class="step">Escalate if needed</span></div></div>
 </section>
 </div>
-<p class="note">Demo notice: This prototype uses local sample data and rule-based classification. It does not connect to a courier API, send messages, update a CRM, or use a live AI model. Customer replies are drafts for human review.</p>
+<p class="note">Demo notice: This dashboard saves test enquiries to the VAMSEE database. Classification is rule-based; replies are drafts for human review. Authentication is not yet enabled—do not enter real customer or confidential data.</p>
 </main>
 <script>
 let count=3, urgent=1, resolved=2, latestReply='';
@@ -59,19 +55,60 @@ const configs={
 function processTicket(){
  const n=document.getElementById('customer').value.trim()||'Customer', t=document.getElementById('tracking').value.trim()||'Not provided', key=document.getElementById('issue').value, msg=document.getElementById('message').value.trim(), c=configs[key];
  latestReply=c.reply(n,t).replaceAll(String.fromCharCode(92)+'n',String.fromCharCode(10));
- document.getElementById('classification').innerHTML=`<span class="pill ${c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':''}">${c.priority} PRIORITY</span><span class="pill">${key.toUpperCase()}</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>${c.team}</b> · Next action: ${c.sla}</p>`;
- const displayReply=latestReply.replaceAll(String.fromCharCode(92)+'n',String.fromCharCode(10));
- document.getElementById('reply').innerHTML=displayReply.split(String.fromCharCode(10)).map(line=>line.replace(/[&<>\"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[ch]))).join('<br>');
+ document.getElementById('classification').innerHTML=`<span class="pill ${c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':''}">${c.priority} PRIORITY</span><span class="pill">${key.toUpperCase()}</span><p class="muted" style="margin:8px function escapeHTML(value){return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
+function renderTickets(tickets){
+ const q=document.getElementById('queue');
+ q.replaceChildren();
+ if(!tickets.length){q.innerHTML='<p class="muted">No tickets yet. Submit a shipment enquiry to create the first one.</p>';}
+ tickets.forEach(t=>{
+  const el=document.createElement('div');el.className='ticket';
+  const priorityClass=t.priority==='HIGH'?'urgent':t.priority==='MEDIUM'?'medium':'';
+  const statuses=['OPEN','IN_PROGRESS','RESOLVED'];
+  el.innerHTML=`<div class="tickethead"><b>${escapeHTML(t.id)} · ${escapeHTML(t.issue_type)}</b><span class="pill ${priorityClass}">${escapeHTML(t.priority)}</span></div><p>${escapeHTML(t.customer_name)} · ${escapeHTML(t.tracking_number)}</p><p>${escapeHTML(t.message||'')}</p><span class="pill">${escapeHTML(t.assigned_queue)}</span><p>Next action: ${escapeHTML(t.next_action)}</p><label>Status</label><select aria-label="Ticket status" data-ticket-id="${escapeHTML(t.id)}">${statuses.map(s=>`<option value="${s}" ${t.status===s?'selected':''}>${s.replace('_',' ')}</option>`).join('')}</select>`;
+  const select=el.querySelector('select');
+  select.addEventListener('change',()=>updateTicketStatus(t.id,select.value,select));
+  q.appendChild(el);
+ });
+ const total=tickets.length, high=tickets.filter(t=>t.priority==='HIGH'&&t.status!=='RESOLVED').length, routine=tickets.filter(t=>t.priority!=='HIGH').length;
+ document.getElementById('total').textContent=String(total).padStart(2,'0');
+ document.getElementById('urgent').textContent=String(high).padStart(2,'0');
+ document.getElementById('resolved').textContent=String(routine).padStart(2,'0');
+}
+async function loadTickets(){
+ const q=document.getElementById('queue');
+ try{
+  const response=await fetch('/api/tickets');
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Could not load tickets');
+  renderTickets(data.tickets||[]);
+ }catch(error){q.innerHTML='<p class="muted">Unable to load live tickets: '+escapeHTML(error.message)+'</p>';}
+}
+async function updateTicketStatus(id,status,select){
+ select.disabled=true;
+ try{
+  const response=await fetch('/api/tickets/'+encodeURIComponent(id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({status})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Status update failed');
+  await loadTickets();
+ }catch(error){alert('Could not update ticket: '+error.message);select.disabled=false;}
+}
+async function processTicket(){
+ const n=document.getElementById('customer').value.trim()||'Customer', t=document.getElementById('tracking').value.trim()||'Not provided', key=document.getElementById('issue').value, msg=document.getElementById('message').value.trim(), c=configs[key];
+ latestReply=c.reply(n,t).replaceAll(String.fromCharCode(92)+'n',String.fromCharCode(10));
+ document.getElementById('classification').innerHTML=`<span class="pill ${c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':''}">${c.priority} PRIORITY</span><span class="pill">${key.toUpperCase()}</span><p class="muted" style="margin:8px 0 0;font-size:13px">Assigned queue: <b>${escapeHTML(c.team)}</b> · Next action: ${escapeHTML(c.sla)}</p>`;
+ document.getElementById('reply').textContent=latestReply;
  document.getElementById('actions').innerHTML=`<span class="step">1 · Categorised</span><span class="step">2 · Draft prepared</span><span class="step">3 · ${c.priority==='HIGH'?'Escalation flagged':'Routine queue'}</span>`;
  document.getElementById('result').style.display='block';
- count++; if(c.priority==='HIGH')urgent++; else resolved++;
- document.getElementById('total').textContent=String(count).padStart(2,'0');
- document.getElementById('urgent').textContent=String(urgent).padStart(2,'0');
- document.getElementById('resolved').textContent=String(resolved).padStart(2,'0');
- const safe=(s)=>s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
- const q=document.getElementById('queue'), el=document.createElement('div'); el.className='ticket';
- el.innerHTML=`<div class="tickethead"><b>${safe(t)} · ${safe(document.getElementById('issue').selectedOptions[0].text)}</b><span class="pill ${c.priority==='HIGH'?'urgent':c.priority==='MEDIUM'?'medium':''}">${c.priority}</span></div><p>${safe(n)} · ${safe(msg)}</p><span class="pill">${safe(c.team)}</span>`;
- q.prepend(el);
+ const button=document.querySelector('button[onclick="processTicket()"]');
+ button.disabled=true;button.textContent='Saving enquiry…';
+ try{
+  const id='VAM-'+Date.now();
+  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Ticket could not be saved');
+  document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="step">Saved to VAMSEE database · '+escapeHTML(data.id)+'</span>');
+  await loadTickets();
+ }catch(error){
+  document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="pill urgent">Save failed: '+escapeHTML(error.message)+'</span>');
+ }finally{button.disabled=false;button.textContent='Process enquiry';}
 }
-function copyReply(){if(!latestReply)return; if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(latestReply).then(()=>alert('Draft copied. Please review before sending.')).catch(()=>alert('Copy is unavailable in this browser.'));}else{alert('Clipboard unavailable. Select and copy the draft manually.');}}
-</script></body></html>
