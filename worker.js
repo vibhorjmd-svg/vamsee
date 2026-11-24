@@ -12,6 +12,47 @@ export default {
     if (request.method === "GET" && url.pathname === "/api/health") {
       return json({ ok: true, service: "VAMSEE ticket API" });
     }
+    if (request.method === "POST" && url.pathname === "/api/assist") {
+      let input;
+      try { input = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
+      const allowedIssues = ["delay", "tracking", "delivery", "address", "damage"];
+      if (!allowedIssues.includes(input.issue_type) || typeof input.customer_name !== "string" ||
+          typeof input.tracking_number !== "string" || typeof input.message !== "string" ||
+          !input.customer_name.trim() || !input.message.trim()) {
+        return json({ error: "Provide a valid enquiry type, customer name, and message." }, 400);
+      }
+      if (!env.AI || typeof env.AI.run !== "function") {
+        return json({ error: "Workers AI binding is not available yet. Check the AI binding in Wrangler settings." }, 503);
+      }
+      const issueLabels = { delay: "Shipment delayed", tracking: "Tracking not updated", delivery: "Marked delivered, not received", address: "Address correction request", damage: "Parcel damaged" };
+      const prompt = `You are VAMSEE's logistics support copilot. Analyse this customer enquiry and return ONLY valid JSON, with no markdown.
+Required JSON keys: priority, assigned_queue, next_action, customer_reply, reason.
+priority must be exactly HIGH, MEDIUM, or NORMAL.
+Choose HIGH for delivery marked delivered but not received, damaged parcels, or serious shipment delays; MEDIUM for stale tracking; NORMAL for address changes unless the message indicates urgency.
+Use a concise, empathetic customer reply. Do not claim you checked a carrier system, do not invent shipment scans or delivery facts, do not promise a resolution time, and do not ask for sensitive payment/password information. For damage, ask the customer to preserve packaging and share photos through the verified support channel. For address changes, say eligibility must be checked before promising a change.
+Customer name: ${input.customer_name.trim().slice(0,100)}
+Tracking/AWB: ${input.tracking_number.trim().slice(0,100) || "Not provided"}
+Enquiry type: ${issueLabels[input.issue_type]}
+Customer message: ${input.message.trim().slice(0,1500)}
+Return only JSON.`;
+      try {
+        const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", { prompt, max_tokens: 500 });
+        const raw = typeof result === "string" ? result : (result.response || result.output || "");
+        const match = String(raw).match(/\{[\s\S]*\}/);
+        if (!match) throw new Error("AI returned an unreadable response.");
+        const suggestion = JSON.parse(match[0]);
+        if (!["HIGH", "MEDIUM", "NORMAL"].includes(suggestion.priority) ||
+            typeof suggestion.assigned_queue !== "string" || typeof suggestion.next_action !== "string" ||
+            typeof suggestion.customer_reply !== "string" || typeof suggestion.reason !== "string") {
+          throw new Error("AI response did not match the expected format.");
+        }
+        return json({ ok: true, source: "workers-ai", priority: suggestion.priority,
+          assigned_queue: suggestion.assigned_queue.slice(0,100), next_action: suggestion.next_action.slice(0,180),
+          customer_reply: suggestion.customer_reply.slice(0,1200), reason: suggestion.reason.slice(0,240) });
+      } catch (error) {
+        return json({ error: "AI processing failed: " + error.message }, 502);
+      }
+    }
     if (request.method === "GET" && url.pathname === "/api/tickets") {
       const status = url.searchParams.get("status");
       const priority = url.searchParams.get("priority");
