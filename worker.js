@@ -3,6 +3,9 @@ const json = (data, status = 200, extraHeaders = {}) => new Response(JSON.string
 });
 
 const SESSION_COOKIE = "vamsee_session";
+// Until per-user sessions are enabled, the existing private workspace is pinned
+// to its seeded tenant. Never accept an organization ID from the browser.
+const DEMO_ORG_ID = "org_vamsee_demo";
 const SESSION_SECONDS = 8 * 60 * 60;
 const encoder = new TextEncoder();
 
@@ -174,18 +177,19 @@ Return only JSON.`;
       const result = await env.DB.prepare(`UPDATE tickets
         SET assigned_queue = 'Priority Escalations',
             next_action = 'Auto-escalated: HIGH-priority ticket exceeded the 4-hour demo SLA. Review the case and contact the carrier/customer.'
-        WHERE priority = 'HIGH'
+        WHERE organization_id = ?
+          AND priority = 'HIGH'
           AND status IN ('OPEN', 'IN_PROGRESS')
           AND created_at <= ?
           AND assigned_queue != 'Priority Escalations'`)
-        .bind(cutoff).run();
+        .bind(DEMO_ORG_ID, cutoff).run();
       return json({ ok: true, escalated: result.meta.changes || 0, checked_at: now.toISOString() });
     }
     if (request.method === "GET" && url.pathname === "/api/tickets") {
       const status = url.searchParams.get("status");
       const priority = url.searchParams.get("priority");
       let sql = "SELECT * FROM tickets";
-      const where = [], values = [];
+      const where = ["organization_id = ?"], values = [DEMO_ORG_ID];
       if (status && ["OPEN","IN_PROGRESS","RESOLVED"].includes(status)) { where.push("status = ?"); values.push(status); }
       if (priority && ["HIGH","MEDIUM","NORMAL"].includes(priority)) { where.push("priority = ?"); values.push(priority); }
       if (where.length) sql += " WHERE " + where.join(" AND ");
@@ -208,9 +212,9 @@ Return only JSON.`;
         lastTrackingAt = new Date(t.last_tracking_at).toISOString();
       }
       await env.DB.prepare(`INSERT INTO tickets
-        (id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at, last_tracking_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`)
-        .bind(t.id,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
+        (id, organization_id, customer_name, tracking_number, issue_type, message, priority, assigned_queue, next_action, status, customer_reply, created_at, updated_at, last_tracking_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'OPEN', ?, ?, ?, ?)`)
+        .bind(t.id,DEMO_ORG_ID,t.customer_name,t.tracking_number,t.issue_type,t.message || "",t.priority,t.assigned_queue,t.next_action,t.customer_reply,now,now,lastTrackingAt).run();
       return json({ ok: true, id: t.id }, 201);
     }
     const match = url.pathname.match(/^\/api\/tickets\/([^/]+)$/);
@@ -218,8 +222,8 @@ Return only JSON.`;
       let body;
       try { body = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       if (!["OPEN","IN_PROGRESS","RESOLVED"].includes(body.status)) return json({ error: "Invalid status." }, 400);
-      const result = await env.DB.prepare("UPDATE tickets SET status = ?, updated_at = ? WHERE id = ?")
-        .bind(body.status,new Date().toISOString(),decodeURIComponent(match[1])).run();
+      const result = await env.DB.prepare("UPDATE tickets SET status = ?, updated_at = ? WHERE id = ? AND organization_id = ?")
+        .bind(body.status,new Date().toISOString(),decodeURIComponent(match[1]),DEMO_ORG_ID).run();
       if (!result.meta.changes) return json({ error: "Ticket not found." }, 404);
       return json({ ok: true });
     }
