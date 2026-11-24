@@ -182,6 +182,19 @@ export default {
       return json({ ok: true, service: "VAMSEE ticket API" });
     }
     if (request.method === "POST" && url.pathname === "/api/assist") {
+      // Protect the AI endpoint from unauthenticated use and unexpected AI spend.
+      if (!sameOrigin(request)) return json({ error: "Request origin rejected." }, 403);
+      if (!env.DB || !env.VAMSEE_SESSION_SECRET || env.VAMSEE_SESSION_SECRET.length < 32) {
+        return json({ error: "Authentication is not configured." }, 503);
+      }
+      const assistPayload = await userPayload(request, env.VAMSEE_SESSION_SECRET);
+      const assistMember = assistPayload ? await env.DB.prepare(
+        "SELECT m.organization_id FROM users u JOIN memberships m ON m.user_id=u.id JOIN organizations o ON o.id=m.organization_id WHERE u.id=? AND m.organization_id=? AND u.status='active' AND m.status='active' AND o.status='active'"
+      ).bind(assistPayload.user_id, assistPayload.organization_id).first() : null;
+      const hasIndividualCookie = (request.headers.get("Cookie") || "").split(";").some(v => v.trim().startsWith(USER_SESSION_COOKIE + "="));
+      const hasLegacySession = !hasIndividualCookie && env.VAMSEE_ACCESS_PASSWORD &&
+        await validSession(request, env.VAMSEE_SESSION_SECRET);
+      if (!assistMember && !hasLegacySession) return json({ error: "Authentication required." }, 401);
       let input;
       try { input = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
       const allowedIssues = ["delay", "tracking", "delivery", "address", "damage"];
