@@ -35,13 +35,15 @@ test("User provisioning enforces least-privilege role assignments", () => {
   assert.ok(worker.includes("if(!member||!canManage)"));
 });
 
-test("Invalid individual sessions cannot fall back to the legacy shared session", () => {
-  assert.ok(worker.includes("const legacy=!hasUserCookie&&!member"));
-  assert.ok(worker.includes("!hasUserCookie && await validSession"));
+test("Protected APIs require an active individual membership with no legacy fallback", () => {
+  assert.ok(worker.includes("if(!member)return json({error:\"Authentication required.\"},401)"));
+  assert.ok(worker.includes("const organizationId=member.organization_id, role=member.role"));
+  assert.ok(!worker.includes("const legacy=!hasUserCookie&&!member"));
+  assert.ok(!worker.includes("VAMSEE_ACCESS_PASSWORD"));
 });
 
 test("Ticket access is scoped to the authenticated organization", () => {
-  assert.ok(worker.includes("const organizationId=member?.organization_id||DEMO_ORG_ID"));
+  assert.ok(worker.includes("const organizationId=member.organization_id, role=member.role"));
   assert.ok(worker.includes("WHERE organization_id = ?"));
   assert.ok(worker.includes("AND organization_id = ?"));
 });
@@ -60,4 +62,14 @@ test("Mutating API requests enforce same-origin checks", () => {
 
 test("AI assistance is restricted to operational roles", () => {
   assert.ok(worker.includes('if (!canOperate) return json({ error: "Your role cannot use AI assistance." }, 403);'));
+});
+
+
+test("Legacy shared-password login is retired", () => {
+  assert.ok(worker.includes('Shared-password login is disabled.'));
+  assert.ok(worker.includes('if(!member)return json({error:"Authentication required."},401)'));
+  assert.ok(!worker.includes("VAMSEE_ACCESS_PASSWORD"));
+  assert.ok(html.includes('id="loginEmail" type="email" autocomplete="username" maxlength="254" required'));
+  assert.ok(script.includes("fetch('/api/auth/login'"));
+  assert.ok(!script.includes("fetch('/api/login'"));
 });

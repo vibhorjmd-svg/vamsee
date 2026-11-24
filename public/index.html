@@ -22,8 +22,8 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
   <h1 id="loginTitle">Private operations workspace</h1>
   <p>Sign in to access the VAMSEE logistics operations dashboard.</p>
   <form id="loginForm">
-    <label for="loginEmail">Work email (leave blank for legacy demo login)</label>
-    <input id="loginEmail" type="email" autocomplete="username" maxlength="254">
+    <label for="loginEmail">Work email</label>
+    <input id="loginEmail" type="email" autocomplete="username" maxlength="254" required>
     <label for="accessPassword">Password</label>
     <input id="accessPassword" type="password" autocomplete="current-password" required maxlength="256">
     <button class="btn" id="loginButton" type="submit">Sign in securely</button>
@@ -444,7 +444,8 @@ async function login(event){
  button.disabled=true;button.textContent='Signing in…';errorBox.textContent='';
  try{
   const email=document.getElementById('loginEmail').value.trim();
-  const response=await fetch(email?'/api/auth/login':'/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(email?{email:email,password:document.getElementById('accessPassword').value}:{password:document.getElementById('accessPassword').value})});
+  if(!email)throw new Error('Enter your work email to sign in.');
+  const response=await fetch('/api/auth/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({email:email,password:document.getElementById('accessPassword').value})});
   const data=await response.json();
   if(!response.ok)throw new Error(data.error||'Sign-in failed.');
   document.getElementById('accessPassword').value='';
