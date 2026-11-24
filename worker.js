@@ -69,7 +69,7 @@ export default {
 
     if(url.pathname==="/api/auth/bootstrap"&&request.method==="POST"){
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
-      if(!env.DB||!env.VAMSEE_BOOTSTRAP_TOKEN||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Bootstrap secrets or database are not configured."},503);
+      if(!env.DB||!env.VAMSEE_BOOTSTRAP_TOKEN||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Bootstrap configuration missing.",diagnostics:{db:!!env.DB,bootstrap_token:!!env.VAMSEE_BOOTSTRAP_TOKEN,session_secret:!!env.VAMSEE_SESSION_SECRET,session_secret_length_ok:!!env.VAMSEE_SESSION_SECRET&&env.VAMSEE_SESSION_SECRET.length>=32}},503);
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
       if(typeof b.token!=="string"||!(await passwordMatches(b.token,env.VAMSEE_BOOTSTRAP_TOKEN)))return json({error:"Invalid setup token."},401);
       try {
