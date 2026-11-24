@@ -29,16 +29,10 @@ Set these in Cloudflare Worker **Settings → Variables and Secrets** (mark both
 Keep the existing `VAMSEE_ACCESS_PASSWORD` only while the legacy demo login is still needed. Never put any of these values in source code or send them in chat.
 
 ### First administrator setup
-After applying migration `0002_multitenant_foundation.sql` and deploying this branch, send one same-origin POST request to `/api/auth/bootstrap` with JSON:
-```json
-{
-  "token": "YOUR_ONE_TIME_BOOTSTRAP_TOKEN",
-  "email": "admin@example.com",
-  "full_name": "Workspace Administrator",
-  "password": "A unique password of at least 12 characters"
-}
-```
-The first account is created as `platform_admin` and is automatically signed in. Bootstrap is refused once any user exists. Remove `VAMSEE_BOOTSTRAP_TOKEN` immediately after successful setup.
+
+After confirming migration `0002_multitenant_foundation.sql` is applied remotely and deploying this branch, open the VAMSEE dashboard login page. Expand **First-time setup · Create the owner account**, then enter the one-time setup token, owner name, owner email, and a unique password of at least 12 characters. The form submits to the same-origin `/api/auth/bootstrap` endpoint; the first account is created as `platform_admin` and automatically signed in.
+
+Immediately remove `VAMSEE_BOOTSTRAP_TOKEN` from Cloudflare Worker secrets after successful setup. Do not share the token or password in chat, email, or source control. Bootstrap is refused once any user exists.
 
 ### Login and provisioning
 - Individual login: `POST /api/auth/login` with `email` and `password`.
