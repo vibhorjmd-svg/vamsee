@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 const worker = readFileSync(new URL("../worker.js", import.meta.url), "utf8");
-const html = readFileSync(new URL("../public/index.html", import.meta.url), "utf8");
-const script = html.split("<script>")[1]?.split("</script>")[0] ?? "";
+const dashboardHtml = readFileSync(new URL("../public/app.html", import.meta.url), "utf8");
+const script = dashboardHtml.split("<script>")[1]?.split("</script>")[0] ?? "";
 
 test("Worker and dashboard JavaScript parse", () => {
   assert.doesNotThrow(() => new Function(worker.replace("export default {", "const worker = {")));
@@ -69,7 +69,7 @@ test("Legacy shared-password login is retired", () => {
   assert.ok(worker.includes('Shared-password login is disabled.'));
   assert.ok(worker.includes('if(!member)return json({error:"Authentication required."},401)'));
   assert.ok(!worker.includes("VAMSEE_ACCESS_PASSWORD"));
-  assert.ok(html.includes('id="loginEmail" type="email" autocomplete="username" maxlength="254" required'));
+  assert.ok(dashboardHtml.includes('id="loginEmail" type="email" autocomplete="username" maxlength="254" required'));
   assert.ok(script.includes("fetch('/api/auth/login'"));
   assert.ok(!script.includes("fetch('/api/login'"));
 });
