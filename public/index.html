@@ -9,9 +9,27 @@
 .wrap{max-width:1180px;margin:auto;padding:28px 22px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:26px}.brand{font-weight:850;letter-spacing:2px;font-size:22px}.brand span{color:var(--lime)}.tag{color:var(--muted);font-size:12px;border:1px solid var(--line);padding:7px 11px;border-radius:30px}
 h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var(--muted);max-width:700px;margin:0 0 25px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.panel{background:rgba(18,35,28,.94);border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:0 12px 40px #0002}.panel h2{font-size:17px;margin:0 0 15px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.metric{background:var(--panel2);border:1px solid var(--line);padding:15px;border-radius:13px}.metric strong{display:block;font-size:27px}.metric small{color:var(--muted)}label{display:block;color:var(--muted);font-size:12px;margin:12px 0 5px}input,select,textarea{width:100%;background:#0b1913;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}textarea{min-height:85px;resize:vertical}.btn{border:0;border-radius:9px;background:var(--lime);color:#152014;padding:11px 16px;font-weight:800;cursor:pointer;margin-top:13px}.btn.secondary{background:#263d31;color:var(--text);border:1px solid var(--line)}.btn:focus,input:focus,textarea:focus,select:focus{outline:2px solid var(--lime);outline-offset:2px}.result{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:12px;background:#0d1c15;display:none}.pill{display:inline-block;border-radius:30px;padding:4px 9px;font-size:11px;font-weight:800;background:#263d31;color:var(--green);margin:3px 5px 3px 0}.pill.urgent{background:#482724;color:var(--red)}.pill.medium{background:#47391e;color:var(--amber)}.response{white-space:pre-wrap;color:#dbe9df;margin-top:10px}.ticket{padding:13px;border:1px solid var(--line);border-radius:11px;margin:9px 0;background:#102119}.tickethead{display:flex;justify-content:space-between;gap:10px}.ticket p{margin:5px 0;color:var(--muted);font-size:13px}.muted{color:var(--muted)}.flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.step{background:#20382b;border:1px solid #355444;border-radius:8px;padding:8px 10px;font-size:12px}.note{font-size:12px;color:var(--muted);margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
 @media(max-width:780px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
+
+#appContent{display:none}#appContent.authenticated{display:block}
+#loginGate{max-width:440px;margin:10vh auto;padding:28px 24px;background:rgba(18,35,28,.96);border:1px solid var(--line);border-radius:17px;box-shadow:0 12px 40px #0004}
+#loginGate .brand{margin-bottom:24px}#loginGate h1{font-size:27px}#loginGate p{color:var(--muted)}
+#loginError{color:var(--red);font-size:13px;min-height:20px;margin-top:10px}
+.logout{margin:0;padding:8px 12px}
 </style></head>
-<body><main class="wrap">
-<header class="top"><div class="brand">VAM<span>SEE</span></div><div class="tag">LIVE INTERACTIVE DEMO · LOGISTICS OPERATIONS</div></header>
+<body>
+<section id="loginGate" aria-labelledby="loginTitle">
+  <div class="brand">VAM<span>SEE</span></div>
+  <h1 id="loginTitle">Private operations workspace</h1>
+  <p>Sign in to access the VAMSEE logistics operations dashboard.</p>
+  <form id="loginForm">
+    <label for="accessPassword">Access password</label>
+    <input id="accessPassword" type="password" autocomplete="current-password" required maxlength="256">
+    <button class="btn" id="loginButton" type="submit">Sign in securely</button>
+  </form>
+  <div id="loginError" role="alert" aria-live="polite"></div>
+</section>
+<main id="appContent" class="wrap">
+<header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · LOGISTICS OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
 <h1>Shipment support, <span style="color:var(--lime)">without the manual chase.</span></h1>
 <p class="sub">A practical preview of how an AI-assisted workflow can classify shipment enquiries, draft customer replies and flag cases that need an operations team's attention.</p>
 <div class="metrics">
@@ -47,7 +65,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <div class="note"><b>Workflow preview</b><div class="flow"><span class="step">Enquiry received</span><span class="step">Classify issue</span><span class="step">Draft response</span><span class="step">Escalate if needed</span></div></div>
 </section>
 </div>
-<p class="note">Demo notice: VAMSEE uses Cloudflare Workers AI to suggest classifications and draft replies when AI is available. All replies require human review. Authentication is not yet enabled—use test data only; do not enter real customer or confidential data.</p>
+<p class="note">Demo notice: VAMSEE uses Cloudflare Workers AI to suggest classifications and draft replies when AI is available. All replies require human review. Access is password-protected; continue using synthetic data until customer-data handling and operational controls are formally reviewed.</p>
 </main>
 <script>
 let latestReply='';
@@ -162,9 +180,45 @@ function copyReply(){
  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(latestReply).then(function(){alert('Response copied.');}).catch(function(){alert('Copy is unavailable in this browser.');});
  else alert('Copy is unavailable in this browser.');
 }
+async function checkSession(){
+ const gate=document.getElementById('loginGate'),app=document.getElementById('appContent');
+ try{
+  const response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});
+  const data=await response.json();
+  if(response.ok&&data.authenticated){
+   gate.style.display='none';app.classList.add('authenticated');loadTickets();return;
+  }
+  gate.style.display='block';app.classList.remove('authenticated');
+  if(!response.ok&&data.configured===false)document.getElementById('loginError').textContent='Setup required: configure the two VAMSEE secrets in Cloudflare Worker settings.';
+ }catch(error){
+  gate.style.display='block';app.classList.remove('authenticated');
+  document.getElementById('loginError').textContent='Unable to verify your session. Refresh and try again.';
+ }
+}
+async function login(event){
+ event.preventDefault();
+ const button=document.getElementById('loginButton'),errorBox=document.getElementById('loginError');
+ button.disabled=true;button.textContent='Signing in…';errorBox.textContent='';
+ try{
+  const response=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({password:document.getElementById('accessPassword').value})});
+  const data=await response.json();
+  if(!response.ok)throw new Error(data.error||'Sign-in failed.');
+  document.getElementById('accessPassword').value='';
+  await checkSession();
+ }catch(error){errorBox.textContent=error.message;}
+ finally{button.disabled=false;button.textContent='Sign in securely';}
+}
+async function logout(){
+ try{await fetch('/api/logout',{method:'POST',headers:{'Accept':'application/json'}});}catch(error){}
+ document.getElementById('appContent').classList.remove('authenticated');
+ document.getElementById('appContent').style.display='none';
+ document.getElementById('loginGate').style.display='block';
+ document.getElementById('loginError').textContent='You have been signed out.';
+}
 document.addEventListener('DOMContentLoaded',function(){
  ['ticketSearch','priorityFilter','statusFilter'].forEach(id=>document.getElementById(id).addEventListener(id==='ticketSearch'?'input':'change',applyTicketFilters));
- loadTickets();
+ document.getElementById('loginForm').addEventListener('submit',login);
+ checkSession();
 });
 </script>
 </body>
