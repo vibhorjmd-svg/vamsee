@@ -313,7 +313,7 @@ Return only JSON.`;
       const id="shp_"+crypto.randomUUID(),now=new Date().toISOString();
       try{
         await env.DB.batch([
-          env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?, 'manual',?,?,?)").bind(id,organizationId,tracking,carrier||null,status,b.last_tracking_at||null,b.last_tracking_at||null,b.external_reference?String(b.external_reference).slice(0,120):null,now,now),
+          env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?, 'manual',?,?,?)").bind(id,organizationId,tracking,carrier||null,status,trackingAt,trackingAt,b.external_reference?String(b.external_reference).slice(0,120):null,now,now),
           env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'shipment.created','shipment',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p?.user_id||null,id,JSON.stringify({tracking_number:tracking,carrier_code:carrier||null}))
         ]);
       }catch(error){if(String(error.message||"").includes("UNIQUE"))return json({error:"That tracking number already exists in this workspace."},409);throw error;}
