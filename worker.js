@@ -8,7 +8,7 @@ const SESSION_COOKIE = "vamsee_session";
 const DEMO_ORG_ID = "org_vamsee_demo";
 const SESSION_SECONDS = 8 * 60 * 60;
 const encoder = new TextEncoder();
-const USER_SESSION_COOKIE="vamsee_user_session", USER_SESSION_SECONDS=28800, PBKDF2_ITERATIONS=210000;
+const USER_SESSION_COOKIE="vamsee_user_session", USER_SESSION_SECONDS=28800, PBKDF2_ITERATIONS=100000;
 function decode64url(s){return Uint8Array.from(atob(s.replaceAll("-","+").replaceAll("_","/")+"=".repeat((4-s.length%4)%4)),c=>c.charCodeAt(0));}
 async function hashPassword(p){const salt=crypto.getRandomValues(new Uint8Array(16));const k=await crypto.subtle.importKey("raw",encoder.encode(p),"PBKDF2",false,["deriveBits"]);const bits=await crypto.subtle.deriveBits({name:"PBKDF2",salt,iterations:PBKDF2_ITERATIONS,hash:"SHA-256"},k,256);return "pbkdf2$"+PBKDF2_ITERATIONS+"$"+toBase64Url(salt)+"$"+toBase64Url(new Uint8Array(bits));}
 async function verifyPassword(p,stored){try{const [kind,n,s,h]=stored.split("$");if(kind!=="pbkdf2"||+n<100000||+n>1000000)return false;const k=await crypto.subtle.importKey("raw",encoder.encode(p),"PBKDF2",false,["deriveBits"]);const a=new Uint8Array(await crypto.subtle.deriveBits({name:"PBKDF2",salt:decode64url(s),iterations:+n,hash:"SHA-256"},k,256)),b=decode64url(h);if(a.length!==b.length)return false;let d=0;for(let i=0;i<a.length;i++)d|=a[i]^b[i];return d===0;}catch{return false;}}
