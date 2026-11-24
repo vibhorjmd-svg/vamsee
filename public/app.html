@@ -7,8 +7,20 @@
 :root{--bg:#102B46;--panel:#173A56;--panel2:#20435B;--line:#31536A;--text:#F4F8FB;--muted:#B8C9D5;--lime:#F49B45;--teal:#35C6B0;--red:#ff817d;--amber:#F49B45;--green:#35C6B0}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#102B46,#173A56);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,Arial}
 .wrap{max-width:1180px;margin:auto;padding:28px 22px 50px}.top{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:26px}.brand{display:inline-flex;align-items:center;gap:9px;font-weight:850;letter-spacing:2px;font-size:22px}.brand span{color:var(--teal)}.brandmark{width:31px;height:31px;flex:none}.brandtagline{display:block;color:var(--muted);font-size:10px;font-weight:650;letter-spacing:1.2px;margin:2px 0 0 40px}.tag{color:var(--muted);font-size:12px;border:1px solid var(--line);padding:7px 11px;border-radius:30px}
-h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var(--muted);max-width:700px;margin:0 0 25px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.panel{background:rgba(18,35,28,.94);border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:0 12px 40px #0002}.panel h2{font-size:17px;margin:0 0 15px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.metric{background:var(--panel2);border:1px solid var(--line);padding:15px;border-radius:13px}.metric strong{display:block;font-size:27px}.metric small{color:var(--muted)}.sla-panel{margin-bottom:18px}.sla-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.sla-policy{font-size:12px;color:var(--muted);margin:-6px 0 14px}.pill.breach{background:#482724;color:var(--red)}.pill.risk{background:#49351F;color:var(--amber)}.pill.good{background:#20435B;color:var(--green)}.pill.auto{background:#49351f;color:var(--amber)}label{display:block;color:var(--muted);font-size:12px;margin:12px 0 5px}input,select,textarea{width:100%;background:#102B46;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}textarea{min-height:85px;resize:vertical}.btn{border:0;border-radius:9px;background:var(--lime);color:#152014;padding:11px 16px;font-weight:800;cursor:pointer;margin-top:13px}.btn.secondary{background:#20435B;color:var(--text);border:1px solid var(--line)}.btn:focus,input:focus,textarea:focus,select:focus{outline:2px solid var(--lime);outline-offset:2px}.result{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:12px;background:#15344E;display:none}.pill{display:inline-block;border-radius:30px;padding:4px 9px;font-size:11px;font-weight:800;background:#263d31;color:var(--green);margin:3px 5px 3px 0}.pill.urgent{background:#482724;color:var(--red)}.pill.medium{background:#47391e;color:var(--amber)}.response{white-space:pre-wrap;color:#dbe9df;margin-top:10px}.ticket{padding:13px;border:1px solid var(--line);border-radius:11px;margin:9px 0;background:#173A56}.tickethead{display:flex;justify-content:space-between;gap:10px}.ticket p{margin:5px 0;color:var(--muted);font-size:13px}.muted{color:var(--muted)}.flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.step{background:#20382b;border:1px solid #35C6B0;border-radius:8px;padding:8px 10px;font-size:12px}.note{font-size:12px;color:var(--muted);margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
+h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var(--muted);max-width:700px;margin:0 0 25px}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}.panel{background:rgba(23,58,86,.94);border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:0 12px 40px #0002}.panel h2{font-size:17px;margin:0 0 15px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.metric{background:var(--panel2);border:1px solid var(--line);padding:15px;border-radius:13px}.metric strong{display:block;font-size:27px}.metric small{color:var(--muted)}.sla-panel{margin-bottom:18px}.sla-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.sla-policy{font-size:12px;color:var(--muted);margin:-6px 0 14px}.pill.breach{background:#482724;color:var(--red)}.pill.risk{background:#49351F;color:var(--amber)}.pill.good{background:#20435B;color:var(--green)}.pill.auto{background:#49351f;color:var(--amber)}label{display:block;color:var(--muted);font-size:12px;margin:12px 0 5px}input,select,textarea{width:100%;background:#102B46;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}textarea{min-height:85px;resize:vertical}.btn{border:0;border-radius:9px;background:var(--lime);color:#152014;padding:11px 16px;font-weight:800;cursor:pointer;margin-top:13px}.btn.secondary{background:#20435B;color:var(--text);border:1px solid var(--line)}.btn:focus,input:focus,textarea:focus,select:focus{outline:2px solid var(--lime);outline-offset:2px}.result{margin-top:16px;padding:15px;border:1px solid var(--line);border-radius:12px;background:#15344E;display:none}.pill{display:inline-block;border-radius:30px;padding:4px 9px;font-size:11px;font-weight:800;background:#263d31;color:var(--green);margin:3px 5px 3px 0}.pill.urgent{background:#482724;color:var(--red)}.pill.medium{background:#47391e;color:var(--amber)}.response{white-space:pre-wrap;color:#dbe9df;margin-top:10px}.ticket{padding:13px;border:1px solid var(--line);border-radius:11px;margin:9px 0;background:#173A56}.tickethead{display:flex;justify-content:space-between;gap:10px}.ticket p{margin:5px 0;color:var(--muted);font-size:13px}.muted{color:var(--muted)}.flow{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.step{background:#20382b;border:1px solid #35C6B0;border-radius:8px;padding:8px 10px;font-size:12px}.note{font-size:12px;color:var(--muted);margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
 @media(max-width:780px){.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.top{align-items:flex-start;flex-direction:column}}
+.shipment-insights{display:grid;grid-template-columns:1fr;gap:12px;padding:16px;margin:14px 0 18px;border:1px solid var(--line);border-radius:13px;background:#102B46}
+.shipment-chart-row{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.shipment-donut{width:168px;height:168px;flex:none;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#31536A 0deg 360deg);position:relative}
+.shipment-donut:before{content:"";position:absolute;width:112px;height:112px;border-radius:50%;background:#102B46}
+.shipment-donut>span{position:relative;z-index:1;text-align:center;display:flex;flex-direction:column}
+.shipment-donut strong{font-size:27px;line-height:1.1}.shipment-donut small{font-size:11px;color:var(--muted)}
+.shipment-legend{display:grid;gap:9px;min-width:190px}
+.shipment-legend-row{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--muted)}
+.shipment-legend-row strong{margin-left:auto;color:var(--text);font-variant-numeric:tabular-nums}
+.shipment-dot{width:9px;height:9px;border-radius:50%;flex:none}
+@media(max-width:520px){.shipment-chart-row{gap:16px}.shipment-donut{width:142px;height:142px}.shipment-donut:before{width:94px;height:94px}}
+
 
 #appContent{display:none}#appContent.authenticated{display:block}
 #loginGate{max-width:440px;margin:10vh auto;padding:28px 24px;background:rgba(18,35,28,.96);border:1px solid var(--line);border-radius:17px;box-shadow:0 12px 40px #0004}
@@ -95,6 +107,10 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <button class="btn" id="shipmentCreateButton" type="submit">Add shipment</button>
 </form>
 <p id="shipmentMessage" class="muted" role="status" aria-live="polite"></p>
+<div class="shipment-insights" aria-labelledby="shipmentInsightsTitle">
+ <div class="shipment-chart-copy"><h3 id="shipmentInsightsTitle">Shipment status overview</h3><p class="muted" style="font-size:12px;margin:4px 0 0">Live breakdown from your workspace shipment records.</p></div>
+ <div class="shipment-chart-row"><div id="shipmentDonut" class="shipment-donut" role="img" aria-label="Shipment status distribution"><span><strong id="shipmentDonutTotal">0</strong><small>Shipments</small></span></div><div id="shipmentLegend" class="shipment-legend"><p class="muted">Loading live shipment data…</p></div></div>
+</div>
 <div id="shipmentList"><p class="muted">Loading shipments…</p></div>
 </section>
 <div class="grid">
@@ -193,12 +209,36 @@ async function loadShipmentEvents(shipmentId,box){
   data.events.forEach(item=>{const row=document.createElement("p");row.className="muted";row.style.fontSize="12px";row.textContent=new Date(item.event_time).toLocaleString()+" · "+item.event_status.replaceAll("_"," ")+" · "+item.description+(item.location?" · "+item.location:"");box.appendChild(row);});
  }catch(error){box.textContent=error.message;}
 }
+function renderShipmentChart(shipments){
+ const groups=[
+  {label:"In transit",color:"#F49B45",match:s=>["picked_up","in_transit","out_for_delivery"].includes(s)},
+  {label:"Delivered",color:"#35C6B0",match:s=>s==="delivered"},
+  {label:"Exceptions",color:"#ff817d",match:s=>["exception","returned"].includes(s)},
+  {label:"Other / pending",color:"#7892A5",match:s=>!["picked_up","in_transit","out_for_delivery","delivered","exception","returned"].includes(s)}
+ ];
+ const counts=groups.map(g=>shipments.filter(x=>g.match(String(x.current_status||"unknown").toLowerCase())).length);
+ const total=shipments.length,donut=document.getElementById("shipmentDonut"),legend=document.getElementById("shipmentLegend");
+ document.getElementById("shipmentDonutTotal").textContent=String(total);
+ let cursor=0;
+ const stops=groups.map((g,i)=>{const start=cursor;cursor+=total?counts[i]/total*360:0;return g.color+" "+start+"deg "+cursor+"deg";});
+ donut.style.background=total?"conic-gradient("+stops.join(",")+")":"conic-gradient(#31536A 0deg 360deg)";
+ donut.setAttribute("aria-label",total?groups.map((g,i)=>g.label+" "+counts[i]).join(", "):"No shipments recorded");
+ legend.replaceChildren();
+ groups.forEach((g,i)=>{
+  const row=document.createElement("div");row.className="shipment-legend-row";
+  const dot=document.createElement("span");dot.className="shipment-dot";dot.style.background=g.color;
+  const label=document.createElement("span");label.textContent=g.label;
+  const value=document.createElement("strong");value.textContent=String(counts[i])+(total?" · "+Math.round(counts[i]/total*100)+"%":"");
+  row.append(dot,label,value);legend.appendChild(row);
+ });
+}
 async function loadShipments(){
  const box=document.getElementById("shipmentList");if(!box)return;
  try{
   const response=await fetch("/api/shipments",{headers:{"Accept":"application/json"},cache:"no-store"});
   const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not load shipments");
   box.replaceChildren();
+  renderShipmentChart(Array.isArray(data.shipments)?data.shipments:[]);
   if(!Array.isArray(data.shipments)||!data.shipments.length){const empty=document.createElement("p");empty.className="muted";empty.textContent="No shipments recorded yet.";box.appendChild(empty);return;}
   data.shipments.forEach(shipment=>{
    const card=document.createElement("div");card.className="ticket";
