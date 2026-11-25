@@ -396,7 +396,11 @@ h1,h2,h3,p,li,a,summary,small,strong,span{overflow-wrap:anywhere}
   if(!('IntersectionObserver' in window)){items.forEach(el=>el.classList.add('is-visible'));return;}
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{
-      if(entry.isIntersecting){entry.target.classList.add('is-visible');observer.unobserve(entry.target);}
+      if(entry.isIntersecting){
+        entry.target.classList.add('is-visible');
+      }else{
+        entry.target.classList.remove('is-visible');
+      }
     });
   },{threshold:.12,rootMargin:'0px 0px -35px 0px'});
   items.forEach((el,index)=>{el.classList.add('reveal');el.style.transitionDelay=(index%4)*75+'ms';observer.observe(el);});
