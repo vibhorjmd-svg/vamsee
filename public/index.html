@@ -80,6 +80,72 @@ h1 em{background-image:linear-gradient(100deg,#FF963F 4%,#FFD09A 42%,#67A8FF 78%
 a:focus-visible,summary:focus-visible{outline:3px solid #67A8FF;outline-offset:4px;border-radius:8px}
 @media(max-width:560px){.btn{padding:12px 16px}.actions .btn{width:100%}.navlinks .btn.ghost{padding:9px 11px}}
 
+
+/* Responsive layout hardening: prevent text, cards and navigation collisions */
+html,body{max-width:100%;overflow-x:hidden}
+.wrap,.hero-grid,.hero-grid>*,.section .wrap,.audiences,.audience,.cards,.card,.cta,.footer-inner{min-width:0}
+h1,h2,h3,p,li,a,summary{overflow-wrap:break-word}
+.hero-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.hero-grid>div:first-child{min-width:0}
+.preview{min-width:0}
+.nav{gap:16px}
+.navlinks{min-width:0;flex-wrap:nowrap;gap:clamp(10px,1.7vw,24px)}
+.navlinks .btn{white-space:nowrap;flex:none}
+.word-cycle{max-width:100%;min-width:0}
+.word-cycle span{max-width:100%}
+.audiences{align-items:stretch}
+.audience{display:flex;flex-direction:column;align-items:flex-start}
+.audience .btn{margin-top:auto}
+.cards{align-items:stretch}
+.card{height:100%}
+.cta{flex-wrap:wrap}
+.cta>div{min-width:0;flex:1 1 440px}
+.cta>.btn{flex:0 0 auto;white-space:nowrap}
+.preview-kpis,.preview-main{min-width:0}
+.kpi,.legend,.donut-wrap{min-width:0}
+@media(max-width:1000px){
+ .hero-grid{grid-template-columns:minmax(0,1fr)}
+ .preview{justify-self:stretch;max-width:100%}
+ .navlinks{gap:12px}
+ .navlinks a:not(.btn){display:none}
+}
+@media(max-width:700px){
+ .wrap{width:calc(100% - 32px)}
+ .nav{height:auto;min-height:68px;padding-top:10px;padding-bottom:10px;flex-wrap:nowrap}
+ .navlinks{margin-left:auto}
+ .hero{padding:52px 0 58px}
+ .hero h1{font-size:clamp(36px,10vw,52px);letter-spacing:-1.6px;line-height:1.08}
+ .word-cycle{display:inline;white-space:normal}
+ .word-cycle span{display:none;animation:none}
+ .word-cycle span:first-child{display:inline}
+ .lead{font-size:17px}
+ .preview{padding:16px}
+ .preview-main{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:12px}
+ .donut{width:min(132px,100%)}
+ .cards,.audiences,.steps{grid-template-columns:minmax(0,1fr)}
+ .audience,.card{width:100%}
+ .cta{padding:26px;gap:18px}
+ .cta>div{flex-basis:100%}
+ .cta>.btn{white-space:normal}
+}
+@media(max-width:390px){
+ .wrap{width:calc(100% - 24px)}
+ .logo{font-size:19px;letter-spacing:1.5px;gap:6px}
+ .brandmark{width:29px;height:29px}
+ .navlinks .btn.ghost{font-size:12px;padding:9px 10px}
+ .preview-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .kpi{padding:8px 6px}
+ .kpi b{font-size:18px}
+ .kpi small{font-size:9px}
+ .preview-main{grid-template-columns:minmax(0,1fr)}
+ .legend{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+ .legend-row{display:grid;justify-items:center;text-align:center;font-size:9px}
+ .legend-label{display:grid;justify-items:center;gap:4px}
+ .legend-row b{font-size:10px}
+ .ticket{align-items:flex-start}
+ .tag{font-size:9px}
+}
+
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
