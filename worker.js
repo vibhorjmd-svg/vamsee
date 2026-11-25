@@ -184,7 +184,7 @@ export default {
       if (!canOperate) return json({ error: "Your role cannot use AI assistance." }, 403);
       let input;
       try { input = await request.json(); } catch { return json({ error: "Invalid JSON." }, 400); }
-      const allowedIssues = ["delay", "tracking", "delivery", "address", "damage"];
+      const allowedIssues = ["general","complaint","billing","technical","onboarding","refund","appointment","admissions","delay","tracking","delivery","address","damage","other"];
       if (!allowedIssues.includes(input.issue_type) || typeof input.customer_name !== "string" ||
           typeof input.tracking_number !== "string" || typeof input.message !== "string" ||
           !input.customer_name.trim() || !input.message.trim()) {
@@ -193,21 +193,22 @@ export default {
       if (!env.AI || typeof env.AI.run !== "function") {
         return json({ error: "Workers AI binding is not available yet. Check the AI binding in Wrangler settings." }, 503);
       }
-      const issueLabels = { delay: "Shipment delayed", tracking: "Tracking not updated", delivery: "Marked delivered, not received", address: "Address correction request", damage: "Parcel damaged" };
-      const prompt = `You are VAMSEE's logistics support copilot. Analyse this customer enquiry and return ONLY valid JSON, with no markdown.
+      const issueLabels = { general:"General enquiry", complaint:"Complaint or service issue", billing:"Billing or payment query", technical:"Technical support", onboarding:"Customer onboarding", refund:"Refund or return request", appointment:"Appointment or booking", admissions:"Admission or application query", delay:"Shipment delayed", tracking:"Tracking not updated", delivery:"Marked delivered, not received", address:"Address correction request", damage:"Parcel damaged", other:"Other customer request" };
+      const industry = typeof input.industry === "string" ? input.industry.trim().slice(0,80) : "General business";
+      const prompt = `You are VAMSEE's customer support and business operations copilot. The business industry is: ${industry}. Analyse the customer enquiry and return ONLY valid JSON, with no markdown.
 Required JSON keys: priority, assigned_queue, next_action, customer_reply, reason.
-priority must be exactly HIGH, MEDIUM, or NORMAL.
-Choose HIGH for delivery marked delivered but not received, damaged parcels, or serious shipment delays; MEDIUM for stale tracking; NORMAL for address changes unless the message indicates urgency.
-Write the customer_reply in professional, natural business English suitable for a logistics company's customer support email. Start with "Hello [customer name]," when a customer name is provided, otherwise "Hello,". Never use intimate, romantic, overly familiar, slang, or pet-name greetings/terms (including "love", "dear", "buddy", or "honey"). Keep the reply concise, empathetic, clear, and action-oriented. Do not claim you checked a carrier system, do not invent shipment scans or delivery facts, do not promise a resolution time, and do not ask for sensitive payment/password information. For damage, ask the customer to preserve packaging and share photos through the verified support channel. For address changes, say eligibility must be checked before promising a change.
+priority must be exactly HIGH, MEDIUM, or NORMAL. Use HIGH for safety concerns, serious complaints, service failures, missed critical appointments, suspected fraud, or urgent unresolved issues; MEDIUM for account, billing, technical, refund or onboarding issues needing investigation; NORMAL for routine information requests. Use judgement based on the message, not category alone.
+Choose a sensible team queue and a clear next action based on the industry and request type.
+Write the customer_reply in professional, natural business English. Start with "Hello [customer name]," when a name is provided, otherwise "Hello,". Be concise, empathetic, clear and action-oriented. Never use intimate, overly familiar, slang or pet-name greetings. Do not claim an action has already happened, invent facts, promise a resolution time, or ask for passwords, OTPs, full payment-card details, or unnecessary sensitive personal/health information. For healthcare-related requests, do not include diagnosis or medical advice; route clinical questions to qualified staff. For billing/refunds, say details must be verified before confirming an outcome.
 Customer name: ${input.customer_name.trim().slice(0,100)}
-Tracking/AWB: ${input.tracking_number.trim().slice(0,100) || "Not provided"}
-Enquiry type: ${issueLabels[input.issue_type]}
+Reference ID: ${input.tracking_number.trim().slice(0,100) || "Not provided"}
+Request type: ${issueLabels[input.issue_type]}
 Customer message: ${input.message.trim().slice(0,1500)}
 Return only JSON.`;
       try {
         const result = await env.AI.run("@cf/google/gemma-4-26b-a4b-it", {
           messages: [
-            { role: "system", content: "You are a logistics support classification engine. Return exactly one JSON object and no other text. Do not include analysis or markdown." },
+            { role: "system", content: "You are a customer support classification engine. Return exactly one JSON object and no other text. Do not include analysis or markdown." },
             { role: "user", content: prompt }
           ],
           max_tokens: 500,
