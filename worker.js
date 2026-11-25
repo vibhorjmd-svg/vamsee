@@ -331,7 +331,8 @@ Return only JSON.`;
       for(const row of rows){
         const tracking=String(row?.tracking_number||"").trim();
         const carrier=String(row?.carrier_code||"").trim().toUpperCase();
-        const status=String(row?.current_status||"unknown").trim().toLowerCase();
+        const suppliedStatus=String(row?.current_status||"").trim().toLowerCase();
+        const status=suppliedStatus||"unknown";
         const eventDate=row?.last_tracking_at?new Date(row.last_tracking_at):null;
         const external=String(row?.external_reference||"").trim();
         if(!tracking||tracking.length>100||carrier.length>40||!allowed.includes(status)||(row?.last_tracking_at&&(!eventDate||!Number.isFinite(eventDate.getTime())))||external.length>120)
@@ -340,11 +341,12 @@ Return only JSON.`;
         const iso=eventDate?eventDate.toISOString():null;
         const existing=await env.DB.prepare("SELECT id,current_status,last_tracking_at FROM shipments WHERE organization_id=? AND tracking_number=?").bind(organizationId,tracking).first();
         const shipmentId=existing?.id||"shp_"+crypto.randomUUID();
-        const changed=status!=="unknown"&&(!existing||existing.current_status!==status||(iso&&existing.last_tracking_at!==iso));
+        const effectiveStatus=(!suppliedStatus&&existing)?existing.current_status:status;
+        const changed=effectiveStatus!=="unknown"&&(!existing||existing.current_status!==effectiveStatus||(iso&&existing.last_tracking_at!==iso));
         const eventAt=iso||(changed?now:null);
-        statements.push(env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'manual',?,?,?) ON CONFLICT(organization_id,tracking_number) DO UPDATE SET carrier_code=COALESCE(excluded.carrier_code,shipments.carrier_code),current_status=excluded.current_status,last_tracking_at=COALESCE(excluded.last_tracking_at,shipments.last_tracking_at),last_event_at=COALESCE(excluded.last_event_at,shipments.last_event_at),external_reference=COALESCE(excluded.external_reference,shipments.external_reference),source='manual',updated_at=excluded.updated_at").bind(shipmentId,organizationId,tracking,carrier||null,status,iso,eventAt,external||null,now,now));
-        if(changed&&eventAllowed.has(status)){
-          statements.push(env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_status,description,event_time,source) VALUES(?,?,?,?,?,?,'csv_import')").bind("evt_"+crypto.randomUUID(),organizationId,shipmentId,status,"Shipment status imported from CSV",eventAt));
+        statements.push(env.DB.prepare("INSERT INTO shipments(id,organization_id,tracking_number,carrier_code,current_status,last_tracking_at,last_event_at,source,external_reference,created_at,updated_at) VALUES(?,?,?,?,?,?,?,'manual',?,?,?) ON CONFLICT(organization_id,tracking_number) DO UPDATE SET carrier_code=COALESCE(excluded.carrier_code,shipments.carrier_code),current_status=excluded.current_status,last_tracking_at=COALESCE(excluded.last_tracking_at,shipments.last_tracking_at),last_event_at=COALESCE(excluded.last_event_at,shipments.last_event_at),external_reference=COALESCE(excluded.external_reference,shipments.external_reference),source='manual',updated_at=excluded.updated_at").bind(shipmentId,organizationId,tracking,carrier||null,effectiveStatus,iso,eventAt,external||null,now,now));
+        if(changed&&eventAllowed.has(effectiveStatus)){
+          statements.push(env.DB.prepare("INSERT INTO shipment_events(id,organization_id,shipment_id,event_status,description,event_time,source) VALUES(?,?,?,?,?,?,'csv_import')").bind("evt_"+crypto.randomUUID(),organizationId,shipmentId,effectiveStatus,"Shipment status imported from CSV",eventAt));
         }
       }
       for(let i=0;i<statements.length;i+=40)await env.DB.batch(statements.slice(i,i+40));
