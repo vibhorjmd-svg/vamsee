@@ -79,7 +79,7 @@ test("CSV shipment imports enforce permissions, row limits, validation, and tena
   assert.ok(worker.includes('url.pathname==="/api/shipments/import"'));
   assert.ok(worker.includes("if(!canOperate)return json({error:\"Your role cannot import shipments.\"},403)"));
   assert.ok(worker.includes("rows.length>200"));
-  assert.ok(worker.includes("const seen=new Set()"));
+  assert.ok(worker.includes("seen=new Set()"));
   assert.ok(worker.includes("WHERE organization_id=? AND tracking_number=?"));
   assert.ok(worker.includes("await env.DB.batch(statements.slice(i,i+40))"));
   assert.ok(worker.includes("shipments.csv_imported"));
