@@ -45,6 +45,41 @@ h1 em{background:linear-gradient(100deg,#F49B45 5%,#FFD19A 48%,#35C6B0 95%);back
 .footer{background:rgba(8,27,44,.28)}
 @media(max-width:800px){.nav{padding-left:14px;padding-right:14px}}
 @media(max-width:560px){.nav{padding-left:14px;padding-right:14px}.hero:before{width:240px;height:240px;right:-150px}.cta:after{right:3%;font-size:150px}}
+
+/* VAMSEE colour system v2: midnight, electric blue and confident orange */
+:root{--midnight:#070D18;--navy:#0B1830;--blue:#123A70;--electric:#287BFF;--orange:#FF8A32;--orange2:#FFB15C;--teal:#39D6C2;--panel:#101F36;--line:rgba(143,177,220,.2)}
+body{background:#080E19;background-image:radial-gradient(ellipse at 8% 8%,rgba(40,123,255,.16),transparent 34%),radial-gradient(ellipse at 92% 28%,rgba(255,138,50,.10),transparent 30%),linear-gradient(145deg,#080E19 0%,#0B1730 48%,#07101E 100%)}
+.nav{background:rgba(7,13,24,.82);border-bottom:1px solid rgba(99,151,226,.18);box-shadow:0 8px 30px rgba(0,0,0,.16)}
+.hero{background:radial-gradient(ellipse at 78% 16%,rgba(40,123,255,.25),transparent 39%),radial-gradient(ellipse at 8% 92%,rgba(255,138,50,.16),transparent 34%),linear-gradient(125deg,#080E19 0%,#10294D 58%,#0A1830 100%)}
+.hero:before{border-color:rgba(40,123,255,.32);box-shadow:0 0 90px rgba(40,123,255,.16),inset 0 0 60px rgba(40,123,255,.08)}
+.hero:after{border-color:rgba(255,138,50,.32);box-shadow:0 0 70px rgba(255,138,50,.14)}
+h1 em{background-image:linear-gradient(100deg,#FF963F 4%,#FFD09A 42%,#67A8FF 78%,#39D6C2 100%)}
+.section{background:linear-gradient(180deg,#080E19 0%,#0B1425 100%)}
+.section.alt{background:radial-gradient(ellipse at 88% 0%,rgba(40,123,255,.19),transparent 42%),linear-gradient(145deg,#0D1D38 0%,#102B50 52%,#0A172B 100%);border-top:1px solid rgba(76,139,225,.12);border-bottom:1px solid rgba(76,139,225,.10)}
+#workflow{background:radial-gradient(ellipse at 8% 30%,rgba(255,138,50,.11),transparent 38%),linear-gradient(180deg,#080E19,#0D1728)}
+#about{background:radial-gradient(ellipse at 90% 15%,rgba(40,123,255,.22),transparent 44%),linear-gradient(135deg,#0B1A32,#12345D 58%,#0A172B)}
+.audience{background:linear-gradient(145deg,rgba(19,48,86,.96),rgba(12,25,46,.98));border-color:rgba(87,151,236,.28)}
+.audience:nth-child(2){background:linear-gradient(145deg,rgba(68,39,27,.78),rgba(17,29,47,.98));border-color:rgba(255,153,74,.3)}
+.card{background:linear-gradient(145deg,#142A49,#0D1B31);border-color:rgba(106,155,220,.22)}
+.card:nth-child(3n+2){background:linear-gradient(145deg,#193B68,#10213B)}
+.icon{background:linear-gradient(145deg,rgba(40,123,255,.24),rgba(57,214,194,.12));color:#83B9FF;border:1px solid rgba(98,160,255,.22)}
+.kpi{background:linear-gradient(145deg,#1B3C67,#142A49);border:1px solid rgba(112,166,238,.16)}
+.preview{background:linear-gradient(145deg,rgba(16,34,61,.98),rgba(9,20,38,.98));border-color:rgba(76,151,255,.38);box-shadow:0 26px 85px rgba(0,0,0,.42),0 0 42px rgba(40,123,255,.12)}
+.preview:before{background:linear-gradient(135deg,rgba(40,123,255,.65),transparent 38%,rgba(255,138,50,.55))}
+.cta{background:radial-gradient(ellipse at 90% 0%,rgba(255,255,255,.18),transparent 42%),linear-gradient(112deg,#F07825 0%,#FF963F 48%,#174B91 100%);border:1px solid rgba(255,190,130,.55);box-shadow:0 24px 65px rgba(0,0,0,.3),0 0 45px rgba(255,138,50,.12)}
+.cta p{color:#FFF0E2}.cta h2{color:#fff}.cta .btn{background:#08172C;color:#fff;border-color:#08172C;box-shadow:0 10px 26px rgba(7,13,24,.3)}
+.footer{background:#060B14;border-top:1px solid rgba(111,157,220,.18)}
+/* Distinct, tactile button treatments */
+.btn{border:1px solid transparent;border-radius:12px;padding:13px 21px;background:linear-gradient(110deg,#FF862F,#FFB04F);color:#101827;box-shadow:0 8px 22px rgba(255,138,50,.2),inset 0 1px 0 rgba(255,255,255,.3);font-weight:850;letter-spacing:.1px;transition:transform .25s ease,box-shadow .25s ease,background .25s ease,border-color .25s ease}
+.btn:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 14px 30px rgba(255,138,50,.3),0 0 0 4px rgba(255,138,50,.09);filter:saturate(1.12) brightness(1.04)}
+.btn:active{transform:translateY(-1px) scale(.99)}
+.btn.ghost{background:linear-gradient(120deg,rgba(40,123,255,.18),rgba(57,214,194,.09));color:#EAF3FF;border:1px solid rgba(107,171,255,.55);box-shadow:0 8px 22px rgba(12,62,130,.14),inset 0 1px 0 rgba(255,255,255,.08)}
+.btn.ghost:hover{background:linear-gradient(120deg,rgba(40,123,255,.34),rgba(57,214,194,.17));border-color:#78B7FF;box-shadow:0 14px 30px rgba(40,123,255,.22),0 0 0 4px rgba(40,123,255,.10)}
+.navlinks .btn.ghost{padding:10px 16px;background:linear-gradient(110deg,#174A89,#12315B);border-color:rgba(108,173,255,.6);color:#fff}
+.navlinks .btn.ghost:hover{background:linear-gradient(110deg,#2168BD,#174A89)}
+a:focus-visible,summary:focus-visible{outline:3px solid #67A8FF;outline-offset:4px;border-radius:8px}
+@media(max-width:560px){.btn{padding:12px 16px}.actions .btn{width:100%}.navlinks .btn.ghost{padding:9px 11px}}
+
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
