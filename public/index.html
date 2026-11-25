@@ -146,6 +146,52 @@ h1,h2,h3,p,li,a,summary{overflow-wrap:break-word}
  .tag{font-size:9px}
 }
 
+
+/* Final overlap guard: robust sizing and small-screen typography */
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%;height:auto}
+.wrap{min-width:0}
+.hero-grid>*{min-width:0}
+h1{overflow-wrap:normal;word-break:normal}
+.lead,.section-head p,.audience p,.card p,.cta p{overflow-wrap:anywhere}
+.audience,.card,.step,.panel,.preview{min-width:0}
+.nav{height:auto;min-height:82px;flex-wrap:wrap}
+.navlinks{flex-wrap:wrap;justify-content:flex-end}
+@media(max-width:760px){
+ .nav{min-height:68px;flex-wrap:nowrap;gap:8px}
+ .navlinks{flex:0 1 auto;min-width:0}
+ .navlinks .btn{max-width:100%;white-space:normal;text-align:center}
+ .hero-grid{grid-template-columns:minmax(0,1fr);gap:30px}
+ .hero-grid>div{width:100%}
+ h1{font-size:clamp(34px,9vw,52px);line-height:1.1;letter-spacing:-1.2px}
+ .word-cycle{display:inline}
+ .word-cycle span{display:none;animation:none}
+ .word-cycle span:first-child{display:inline}
+ .actions{align-items:stretch}
+ .actions .btn{flex:1 1 100%;width:100%;white-space:normal;text-align:center}
+ .preview-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .preview-main{grid-template-columns:minmax(0,1fr);justify-items:center}
+ .legend{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .legend-row{min-width:0;flex-wrap:wrap;justify-content:center;text-align:center}
+ .audiences,.cards,.steps{grid-template-columns:minmax(0,1fr)}
+ .audience .btn{max-width:100%;white-space:normal;text-align:center}
+ .cta{display:flex;flex-direction:column;align-items:flex-start}
+ .cta>.btn{max-width:100%;white-space:normal;text-align:center}
+}
+@media(max-width:420px){
+ .wrap{width:calc(100% - 24px)}
+ .logo{font-size:19px;letter-spacing:1.2px}
+ .brandmark{width:29px;height:29px}
+ .navlinks .btn{font-size:11px;padding:8px 9px}
+ .preview-kpis{gap:5px}
+ .kpi{padding:8px 5px}
+ .kpi b{font-size:18px}
+ .kpi small{font-size:9px}
+ .legend{gap:4px}
+ .legend-row{font-size:9px}
+ .ticket{flex-wrap:wrap}
+}
+
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
