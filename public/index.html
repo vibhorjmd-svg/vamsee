@@ -389,25 +389,27 @@ h1,h2,h3,p,li,a,summary,small,strong,span{overflow-wrap:anywhere}
   transform:none !important;
 }
 
-/* Ensure card fade transitions win over the generic hover transition rule. */
-.audience.reveal,
-.card.reveal{
-  opacity:0;
-  transform:translateY(24px);
-  transition:opacity .8s ease, transform .8s cubic-bezier(.2,.7,.2,1) !important;
+/* Dedicated repeat-on-scroll animation; isolated from the site's generic .reveal rules. */
+.audience.vamsee-scroll-card,
+.card.vamsee-scroll-card{
+  opacity:0 !important;
+  transform:translate3d(0,28px,0) !important;
+  transition:opacity .65s ease,transform .65s cubic-bezier(.2,.7,.2,1) !important;
   will-change:opacity,transform;
 }
-.audience.reveal.is-visible,
-.card.reveal.is-visible{
-  opacity:1;
-  transform:translateY(0);
+.audience.vamsee-scroll-card.vamsee-in-view,
+.card.vamsee-scroll-card.vamsee-in-view{
+  opacity:1 !important;
+  transform:translate3d(0,0,0) !important;
+}
+.audience.vamsee-scroll-card.vamsee-in-view:hover,
+.card.vamsee-scroll-card.vamsee-in-view:hover{
+  transform:translate3d(0,-6px,0) !important;
 }
 @media(prefers-reduced-motion:reduce){
-  .audience.reveal,.card.reveal,
-  .audience.reveal.is-visible,.card.reveal.is-visible{
-    opacity:1 !important;
-    transform:none !important;
-    transition:none !important;
+  .audience.vamsee-scroll-card,.card.vamsee-scroll-card,
+  .audience.vamsee-scroll-card.vamsee-in-view,.card.vamsee-scroll-card.vamsee-in-view{
+    opacity:1 !important;transform:none !important;transition:none !important;
   }
 }
 </style></head><body>
@@ -423,15 +425,24 @@ h1,h2,h3,p,li,a,summary,small,strong,span{overflow-wrap:anywhere}
 <footer class="footer"><div class="wrap footer-inner"><div><a class="logo" href="#">VAM<span>SEE</span></a><div>Intelligent Operations. Seamless Support.</div></div><div>© 2026 VAMSEE · <a href="mailto:vibhorjmd@gmail.com">Contact VAMSEE</a> · <a href="/app.html">Team login</a></div></div></footer>
 <script>
 (function(){
-  /* Cards only: fade away when scrolled past, then fade back in on return */
-  const items=document.querySelectorAll('.audience,.card');
-  if(!('IntersectionObserver' in window)){items.forEach(el=>el.classList.add('is-visible'));return;}
+  /* Dedicated observer: cards fade out after leaving the viewport and fade in on return. */
+  const cards=document.querySelectorAll('.audiences .audience,.cards .card');
+  const reducedMotion=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if(reducedMotion || !('IntersectionObserver' in window)){
+    cards.forEach(card=>card.classList.add('vamsee-scroll-card','vamsee-in-view'));
+    return;
+  }
   const observer=new IntersectionObserver(entries=>{
     entries.forEach(entry=>{
-      entry.target.classList.toggle('is-visible',entry.isIntersecting);
+      entry.target.classList.toggle('vamsee-in-view',entry.isIntersecting);
     });
-  },{threshold:.18,rootMargin:'0px 0px -30px 0px'});
-  items.forEach((el,index)=>{el.classList.add('reveal');el.style.transitionDelay=(index%3)*90+'ms';observer.observe(el);});
+  },{threshold:0,rootMargin:'0px'});
+  cards.forEach((card,index)=>{
+    card.classList.remove('reveal','is-visible');
+    card.classList.add('vamsee-scroll-card');
+    card.style.transitionDelay=(index%3)*80+'ms';
+    observer.observe(card);
+  });
 })();
 </script>
 </body></html>
