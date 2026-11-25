@@ -32,7 +32,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <section id="loginGate" aria-labelledby="loginTitle">
   <div><div class="brand"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></div><span class="brandtagline">INTELLIGENT OPERATIONS. SEAMLESS SUPPORT.</span></div>
   <h1 id="loginTitle">Private operations workspace</h1>
-  <p>Sign in to access the VAMSEE logistics operations dashboard.</p>
+  <p>Sign in to access the VAMSEE customer support and operations workspace.</p>
   <form id="loginForm">
     <label for="loginEmail">Work email</label>
     <input id="loginEmail" type="email" autocomplete="username" maxlength="254" required>
@@ -58,9 +58,9 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
   <div id="loginError" role="alert" aria-live="polite"></div>
 </section>
 <main id="appContent" class="wrap">
-<header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · LOGISTICS OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
-<h1>Shipment support, <span style="color:var(--lime)">without the manual chase.</span></h1>
-<p class="sub">A practical preview of how an AI-assisted workflow can classify shipment enquiries, draft customer replies and flag cases that need an operations team's attention.</p>
+<header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · CUSTOMER OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
+<h1>Customer support, <span style="color:var(--lime)">under control.</span></h1>
+<p class="sub">Manage customer enquiries, complaints and service requests across industries. Classify issues, draft replies, track ownership and flag cases that need your team’s attention.</p>
 <section class="panel" id="userAdminPanel" style="display:none;margin-bottom:18px" aria-labelledby="userAdminTitle">
 <h2 id="userAdminTitle">Workspace access management</h2>
 <p class="muted" style="font-size:13px">Create team accounts with least-privilege access. Share temporary passwords separately.</p>
@@ -91,8 +91,8 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <div class="metric"><strong id="slaCompliance">—</strong><small>Resolved within SLA</small></div>
 </div>
 <div class="sla-grid" style="margin-top:12px">
-<div class="metric"><strong id="stagnantCount">00</strong><small>Shipments without movement for 24h+</small></div>
-<div class="metric"><strong id="monitoredCount">00</strong><small>Shipments with tracking timestamps</small></div>
+<div class="metric"><strong id="stagnantCount">00</strong><small>Logistics shipments without movement for 24h+</small></div>
+<div class="metric"><strong id="monitoredCount">00</strong><small>Logistics shipments with tracking timestamps</small></div>
 </div>
 </section>
 <section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
@@ -106,7 +106,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
   <p id="shipmentImportMessage" class="muted" role="status" aria-live="polite"></p>
  </form>
 </div>
-<p class="muted" style="font-size:13px">You can also add shipments manually and record carrier scan updates below.</p>
+<p class="muted" style="font-size:13px">Optional logistics module: add shipments manually and record carrier scan updates below.</p>
 <form id="shipmentCreateForm">
 <div class="sla-grid">
 <div><label for="shipmentTracking">Tracking / AWB number</label><input id="shipmentTracking" required maxlength="100"></div>
@@ -124,11 +124,11 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </section>
 <div class="grid">
 <section class="panel">
-<h2>1. Submit a shipment enquiry</h2>
+<h2>1. Create a customer support ticket</h2>
 <label for="customer">Customer name</label><input id="customer" value="Aarav Mehta">
-<label for="tracking">Tracking / AWB number</label><input id="tracking" value="VMS-20481">
-<label for="issue">Enquiry type</label><select id="issue"><option value="delay">Shipment delayed</option><option value="tracking">Tracking not updated</option><option value="delivery">Marked delivered, not received</option><option value="address">Address correction request</option><option value="damage">Parcel damaged</option></select>
-<label for="lastTrackingAt">Last tracking movement (optional)</label><input id="lastTrackingAt" type="datetime-local" aria-describedby="trackingHelp"><p id="trackingHelp" class="muted" style="font-size:12px;margin:4px 0">Enter the date and time of the most recent carrier scan. Shipments with no movement for over 24 hours will be flagged.</p>
+<label for="tracking">Order / account / reference ID (optional)</label><input id="tracking" value="" placeholder="e.g. ORDER-20481 or leave blank">
+<label for="industry">Business industry</label><select id="industry"><option value="General business">General business</option><option value="SaaS & IT">SaaS & IT</option><option value="E-commerce & D2C">E-commerce & D2C</option><option value="Education & EdTech">Education & EdTech</option><option value="Healthcare">Healthcare</option><option value="Logistics & 3PL">Logistics & 3PL</option><option value="BFSI & Fintech">BFSI & Fintech</option><option value="Other">Other</option></select><label for="issue">Request type</label><select id="issue"><option value="general">General enquiry</option><option value="complaint">Complaint / service issue</option><option value="billing">Billing / payment query</option><option value="technical">Technical support</option><option value="onboarding">Customer onboarding</option><option value="refund">Refund / return request</option><option value="appointment">Appointment / booking</option><option value="admissions">Admission / application query</option><option value="delay">Shipment delayed</option><option value="tracking">Tracking not updated</option><option value="delivery">Marked delivered, not received</option><option value="address">Address correction request</option><option value="damage">Parcel damaged</option><option value="other">Other request</option></select>
+<label for="lastTrackingAt">Last carrier scan time (logistics cases only, optional)</label><input id="lastTrackingAt" type="datetime-local" aria-describedby="trackingHelp"><p id="trackingHelp" class="muted" style="font-size:12px;margin:4px 0">Enter the date and time of the most recent carrier scan. Shipments with no movement for over 24 hours will be flagged.</p>
 <label for="message">Customer message</label><textarea id="message">My shipment has not moved for 3 days. Please check and update me.</textarea>
 <button class="btn" onclick="processTicket()">Process enquiry</button>
 <div class="result" id="result" aria-live="polite">
@@ -139,8 +139,8 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </div>
 </section>
 <section class="panel">
-<h2>2. Operations queue</h2>
-<p class="muted" style="margin-top:-8px;font-size:13px">Live tickets loaded from the VAMSEE database. HIGH-priority tickets older than 4 hours are auto-escalated on load/refresh. Shipments with a recorded carrier scan older than 24 hours are flagged separately.</p>
+<h2>2. Customer operations queue</h2>
+<p class="muted" style="margin-top:-8px;font-size:13px">Live customer requests from the VAMSEE database. HIGH-priority tickets older than the configured demo target are flagged for escalation. Logistics tracking is available as an optional module.</p>
 <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin:12px 0">
 <input id="ticketSearch" type="search" placeholder="Search customer, AWB or ticket" aria-label="Search tickets">
 <select id="priorityFilter" aria-label="Filter by priority"><option value="">All priorities</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="NORMAL">Normal</option></select>
@@ -157,11 +157,20 @@ let latestReply='';
 let allTickets=[];
 let currentUser=null;
 const configs={
- delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review immediately',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check with the carrier for the latest movement status.\n\nWe’ll share an update as soon as the shipment status is confirmed. Thank you for your patience.\n\nVAMSEE Support'},
- tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\n\nThanks for contacting us about shipment '+t+'. Tracking events can sometimes take time to appear after a carrier scan. We’ve marked this for a tracking-status check and recommend reviewing the next scan update.\n\nWe’ll keep you informed if the status remains unchanged.\n\nVAMSEE Support'},
- delivery:{priority:'HIGH',team:'Proof-of-delivery investigation',sla:'Escalate for delivery proof',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry to hear that shipment '+t+' is marked delivered but has not reached you. We’ve flagged this for an urgent proof-of-delivery investigation with the delivery team.\n\nPlease confirm whether anyone else at the delivery address may have accepted it. We’ll investigate and update you.\n\nVAMSEE Support'},
- address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\n\nWe’ve received your address correction request for shipment '+t+'. Our team needs to verify whether the parcel is still eligible for an address update before dispatch or final-mile processing.\n\nPlease share the corrected address through the verified support channel.\n\nVAMSEE Support'},
- damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request photos and escalate',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry the parcel associated with shipment '+t+' appears to be damaged. We’ve flagged this for our claims team. Please keep the packaging and item, and share clear photos of the outer packaging, shipping label and damaged item through the verified support channel.\n\nOur team will review the details and guide you on the next steps.\n\nVAMSEE Support'}
+ general:{priority:'NORMAL',team:'Customer Support',sla:'Review and respond',reply:(n)=>'Hello '+n+',\\n\\nThank you for contacting us. We have received your request and our support team will review the details. If any additional information is needed, we will contact you through the agreed support channel.\\n\\nVAMSEE Support'},
+ complaint:{priority:'HIGH',team:'Customer Experience / Escalations',sla:'Review complaint and assign an owner',reply:(n)=>'Hello '+n+',\\n\\nWe are sorry to hear about your experience. Your concern has been recorded for review by the appropriate team. We will verify the details before sharing an update.\\n\\nVAMSEE Support'},
+ billing:{priority:'MEDIUM',team:'Billing Support',sla:'Verify account and transaction details',reply:(n)=>'Hello '+n+',\\n\\nThank you for reaching out about your billing query. Our team will review the information and confirm the next steps. Please do not share passwords, OTPs or full payment-card details.\\n\\nVAMSEE Support'},
+ technical:{priority:'MEDIUM',team:'Technical Support',sla:'Triage issue and gather diagnostic details',reply:(n)=>'Hello '+n+',\\n\\nThanks for reporting this technical issue. Our support team will review the details. If possible, please share the steps to reproduce the issue and any relevant error message, without including passwords or sensitive data.\\n\\nVAMSEE Support'},
+ onboarding:{priority:'NORMAL',team:'Customer Onboarding',sla:'Review onboarding status and next steps',reply:(n)=>'Hello '+n+',\\n\\nWelcome, and thank you for contacting us. Our onboarding team will review your request and guide you through the next steps.\\n\\nVAMSEE Support'},
+ refund:{priority:'MEDIUM',team:'Returns & Refunds',sla:'Check order and applicable policy',reply:(n)=>'Hello '+n+',\\n\\nWe have received your return or refund request. Our team will verify the order details and applicable policy before confirming the available options.\\n\\nVAMSEE Support'},
+ appointment:{priority:'NORMAL',team:'Bookings / Scheduling',sla:'Check booking availability',reply:(n)=>'Hello '+n+',\\n\\nThank you for your booking enquiry. Our team will review the requested details and confirm availability through the agreed channel.\\n\\nVAMSEE Support'},
+ admissions:{priority:'NORMAL',team:'Admissions Support',sla:'Review application enquiry',reply:(n)=>'Hello '+n+',\\n\\nThank you for your interest. Our team will review your enquiry and share the relevant application information and next steps.\\n\\nVAMSEE Support'},
+ delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review shipment delay',reply:(n,t)=>'Hello '+n+',\\n\\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check for the latest confirmed status.\\n\\nVAMSEE Support'},
+ tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\\n\\nThanks for contacting us about shipment '+t+'. We have marked this for a tracking-status check.\\n\\nVAMSEE Support'},
+ delivery:{priority:'HIGH',team:'Delivery investigation',sla:'Escalate for delivery proof',reply:(n,t)=>'Hello '+n+',\\n\\nWe’re sorry shipment '+t+' is marked delivered but has not reached you. We have flagged this for an investigation.\\n\\nVAMSEE Support'},
+ address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\\n\\nWe have received your address correction request for '+t+'. Our team will verify whether an update is still possible before confirming.\\n\\nVAMSEE Support'},
+ damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request evidence and escalate',reply:(n,t)=>'Hello '+n+',\\n\\nWe’re sorry the parcel associated with '+t+' appears to be damaged. Please preserve the packaging and share clear photos through the verified support channel.\\n\\nVAMSEE Support'},
+ other:{priority:'NORMAL',team:'Customer Support',sla:'Review and route request',reply:(n)=>'Hello '+n+',\\n\\nThank you for contacting us. We have recorded your request and will route it to the appropriate team for review.\\n\\nVAMSEE Support'}
 };
 const ADMIN_ROLE_OPTIONS={
  platform_admin:["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
@@ -384,7 +393,7 @@ function applyTicketFilters(){
  const queue=document.getElementById('queue');queue.replaceChildren();
  if(!filtered.length){
   const empty=document.createElement('p');empty.className='muted';
-  empty.textContent=allTickets.length?'No tickets match these filters.':'No tickets yet. Submit a shipment enquiry to create the first one.';
+  empty.textContent=allTickets.length?'No tickets match these filters.':'No tickets yet. Create a customer support ticket to start the queue.';
   queue.appendChild(empty);return;
  }
  filtered.forEach(ticket=>{
@@ -444,6 +453,7 @@ async function updateTicketStatus(id,status,select){
 async function processTicket(){
  const n=document.getElementById('customer').value.trim()||'Customer';
  const t=document.getElementById('tracking').value.trim()||'Not provided';
+ const industry=document.getElementById('industry').value;
  const key=document.getElementById('issue').value,msg=document.getElementById('message').value.trim();
  if(!msg){alert('Please enter the customer message.');return;}
  const button=document.querySelector('button[onclick="processTicket()"]');
@@ -454,13 +464,13 @@ async function processTicket(){
  document.getElementById('actions').replaceChildren();
  let c, source='workers-ai';
  try{
-  const assistResponse=await fetch('/api/assist',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({customer_name:n,tracking_number:t,issue_type:key,message:msg})});
+  const assistResponse=await fetch('/api/assist',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({customer_name:n,tracking_number:t,industry:industry,issue_type:key,message:msg})});
   const assist=await assistResponse.json();
   if(!assistResponse.ok)throw new Error(assist.error||'AI service unavailable');
   c={priority:assist.priority,team:assist.assigned_queue,sla:assist.next_action,reply:assist.customer_reply,reason:assist.reason};
  }catch(error){
   source='rule-based-fallback';
-  const fallback=configs[key];
+  const fallback=configs[key]||configs.other;
   c={priority:fallback.priority,team:fallback.team,sla:fallback.sla,reply:fallback.reply(n,t),reason:'AI unavailable; standard rules used. '+error.message};
  }
  latestReply=c.reply;
@@ -470,7 +480,7 @@ async function processTicket(){
  button.textContent='Saving enquiry…';
  try{
   const id='VAM-'+Date.now();
-  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({id:id,customer_name:n,tracking_number:t,issue_type:document.getElementById('issue').selectedOptions[0].text,message:msg,last_tracking_at:document.getElementById('lastTrackingAt').value?new Date(document.getElementById('lastTrackingAt').value).toISOString():null,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
+  const response=await fetch('/api/tickets',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({id:id,customer_name:n,tracking_number:t,issue_type:industry+' · '+document.getElementById('issue').selectedOptions[0].text,message:msg,last_tracking_at:document.getElementById('lastTrackingAt').value?new Date(document.getElementById('lastTrackingAt').value).toISOString():null,priority:c.priority,assigned_queue:c.team,next_action:c.sla,customer_reply:latestReply})});
   const data=await response.json();if(!response.ok)throw new Error(data.error||'Ticket could not be saved');
   document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="step">Saved to VAMSEE database · '+escapeHTML(data.id)+'</span>');await loadTickets();
  }catch(error){document.getElementById('actions').insertAdjacentHTML('beforeend','<span class="pill urgent">Save failed: '+escapeHTML(error.message)+'</span>');}
