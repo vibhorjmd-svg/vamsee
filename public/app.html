@@ -27,6 +27,44 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 #loginGate .brand{margin-bottom:24px}#loginGate h1{font-size:27px}#loginGate p{color:var(--muted)}
 #loginError{color:var(--red);font-size:13px;min-height:20px;margin-top:10px}
 .logout{margin:0;padding:8px 12px}
+ 
+/* Dashboard overlap guard: allow every grid item to shrink and stack cleanly */
+html,body{max-width:100%;overflow-x:hidden}
+.wrap,.top,.grid,.panel,.metric,.sla-grid,.tickethead,.shipment-chart-row,.shipment-legend{min-width:0}
+.grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.metrics,.sla-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.metric strong{overflow-wrap:anywhere}
+.tickethead{flex-wrap:wrap;align-items:flex-start}
+.panelhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+#userDirectory,#shipmentList,#queue{min-width:0;overflow-wrap:anywhere}
+#userDirectory table,#shipmentList table,#queue table{width:100%;max-width:100%;border-collapse:collapse}
+#userDirectory td,#userDirectory th,#shipmentList td,#shipmentList th,#queue td,#queue th{overflow-wrap:anywhere;word-break:break-word}
+#ticketSearch{min-width:0}
+@media(max-width:780px){
+ .wrap{padding:20px 16px 40px}
+ .grid{grid-template-columns:minmax(0,1fr)}
+ .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .sla-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .top{align-items:stretch;flex-direction:column}
+ .top>div:last-child{width:100%;justify-content:space-between}
+ .tag{white-space:normal;max-width:100%}
+ #userCreateForm .sla-grid,#shipmentCreateForm .sla-grid{grid-template-columns:minmax(0,1fr)}
+ #ticketSearch+select,#priorityFilter,#statusFilter{min-width:0}
+}
+@media(max-width:480px){
+ .wrap{padding:16px 12px 32px}
+ .panel{padding:14px}
+ .metrics,.sla-grid{grid-template-columns:minmax(0,1fr)}
+ .shipment-chart-row{justify-content:center}
+ .shipment-legend{width:100%;min-width:0}
+ .tickethead{gap:6px}
+ #appContent h1{font-size:clamp(25px,8vw,34px)}
+ #appContent .sub{overflow-wrap:anywhere}
+ #ticketSearch{grid-column:1/-1}
+ #priorityFilter,#statusFilter{grid-column:1/-1;width:100%}
+ .logout{align-self:flex-start}
+}
+
 </style></head>
 <body>
 <section id="loginGate" aria-labelledby="loginTitle">
