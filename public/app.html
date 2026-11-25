@@ -101,7 +101,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
  <div class="panelhead"><div><h3>Import shipment data</h3><p class="muted" style="font-size:13px">Upload a courier or order-management CSV export. No courier login, password or API key is needed.</p></div><span class="pill good">Offline import</span></div>
  <form id="shipmentImportForm" style="display:grid;gap:10px;max-width:620px">
   <label for="shipmentCsvFile">Shipment CSV file</label><input id="shipmentCsvFile" type="file" accept=".csv,text/csv" required>
-  <p class="muted" style="font-size:12px;margin:0">Required column: tracking_number. Optional: carrier_code, current_status, last_tracking_at, external_reference. Maximum 200 rows per upload.</p>
+  <p class="muted" style="font-size:12px;margin:0">Required: tracking_number. Optional: carrier_code or carrier; current_status or status; last_tracking_at; external_reference. Status values such as “In Transit” and “Delivered” are normalized automatically. Maximum 200 rows per upload.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="shipmentImportButton" type="submit">Import CSV</button><button class="btn secondary" id="shipmentTemplateButton" type="button">Download CSV template</button><button class="btn secondary" id="shipmentExportButton" type="button">Export workspace CSV</button></div>
   <p id="shipmentImportMessage" class="muted" role="status" aria-live="polite"></p>
  </form>
@@ -262,7 +262,9 @@ async function importShipmentsCsv(event){
   const matrix=parseCsv(await file.text());if(matrix.length<2)throw new Error("CSV must include a header and at least one shipment row.");
   const headers=matrix[0].map(h=>h.trim().toLowerCase().replace(/\s+/g,"_"));
   const index=name=>headers.indexOf(name);if(index("tracking_number")<0)throw new Error("Required CSV header missing: tracking_number.");
-  const shipments=matrix.slice(1).map((r,i)=>({tracking_number:r[index("tracking_number")]||"",carrier_code:index("carrier_code")>=0?r[index("carrier_code")]||"": "",current_status:index("current_status")>=0?(r[index("current_status")]||"unknown").toLowerCase().replace(/[\s-]+/g,"_"):"unknown",last_tracking_at:index("last_tracking_at")>=0?r[index("last_tracking_at")]||null:null,external_reference:index("external_reference")>=0?r[index("external_reference")]||"":""}));
+  const carrierColumn=index("carrier_code")>=0?index("carrier_code"):(index("carrier")>=0?index("carrier"):index("carrier_name"));
+  const statusColumn=index("current_status")>=0?index("current_status"):index("status");
+  const shipments=matrix.slice(1).map(r=>({tracking_number:r[index("tracking_number")]||"",carrier_code:carrierColumn>=0?r[carrierColumn]||"": "",current_status:statusColumn>=0?String(r[statusColumn]||"unknown").trim().toLowerCase().replace(/[\s-]+/g,"_"):"unknown",last_tracking_at:index("last_tracking_at")>=0?r[index("last_tracking_at")]||null:null,external_reference:index("external_reference")>=0?r[index("external_reference")]||"":""}));
   if(shipments.length>200)throw new Error("Maximum 200 shipment rows per upload. Split the file into smaller batches.");
   const response=await fetch("/api/shipments/import",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify({shipments})});const result=await response.json();if(!response.ok)throw new Error(result.error||"Import failed.");
   message.textContent="Import complete: "+result.imported+" rows created or updated. Refreshing dashboard…";document.getElementById("shipmentCsvFile").value="";await loadShipments();

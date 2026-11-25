@@ -94,7 +94,17 @@ test("CSV imports record changed shipment statuses in tracking history", () => {
 });
 
 test("CSV imports preserve existing status when the optional status column is blank", () => {
-  assert.ok(worker.includes("const suppliedStatus=String(row?.current_status||\"\").trim().toLowerCase()"));
+  assert.ok(worker.includes('const suppliedStatus=String(row?.current_status??row?.status??"").trim().toLowerCase().replace(/[\\s-]+/g,"_")'));
   assert.ok(worker.includes("current_status=excluded.current_status"));
   assert.ok(worker.includes("const effectiveStatus=(!suppliedStatus&&existing)?existing.current_status:status"));
+});
+
+
+test("CSV import accepts common carrier/status headers and normalizes human-readable statuses", () => {
+  assert.ok(worker.includes("row?.carrier_code??row?.carrier??row?.carrier_name"));
+  assert.ok(worker.includes("row?.current_status??row?.status??"));
+  assert.ok(worker.includes('replace(/[\\s-]+/g,"_")'));
+  assert.ok(dashboardHtml.includes('index("carrier")'));
+  assert.ok(dashboardHtml.includes('index("status")'));
+  assert.ok(dashboardHtml.includes("Status values such as"));
 });

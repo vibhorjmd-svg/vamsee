@@ -330,8 +330,9 @@ Return only JSON.`;
       const now=new Date().toISOString(),seen=new Set(),statements=[];
       for(const row of rows){
         const tracking=String(row?.tracking_number||"").trim();
-        const carrier=String(row?.carrier_code||"").trim().toUpperCase();
-        const suppliedStatus=String(row?.current_status||"").trim().toLowerCase();
+        // Accept both VAMSEE's canonical headers and common courier/order exports.
+        const carrier=String(row?.carrier_code??row?.carrier??row?.carrier_name??"").trim().toUpperCase();
+        const suppliedStatus=String(row?.current_status??row?.status??"").trim().toLowerCase().replace(/[\s-]+/g,"_");
         const status=suppliedStatus||"unknown";
         const eventDate=row?.last_tracking_at?new Date(row.last_tracking_at):null;
         const external=String(row?.external_reference||"").trim();
