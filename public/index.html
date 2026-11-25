@@ -231,6 +231,84 @@ h1{overflow-wrap:normal;word-break:normal}
  .cta h2{font-size:clamp(26px,7vw,34px);line-height:1.15}
 }
 
+
+/* Consolidated layout repair: stable sizing across all screen widths */
+html{width:100%;overflow-x:clip}
+body{width:100%;min-width:320px;overflow-x:clip}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%}
+.wrap,.section,.section>.wrap,.hero-grid,.hero-grid>*,.nav,.navlinks,
+.audiences,.audience,.cards,.card,.steps,.step,.preview,.preview-head,
+.preview-main,.preview-kpis,.cta,.cta>div,.footer-inner{min-width:0;max-width:100%}
+h1,h2,h3,p,li,a,summary,small,strong,span{overflow-wrap:anywhere}
+.nav{height:auto;min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.navlinks{display:flex;align-items:center;justify-content:flex-end;gap:clamp(10px,1.5vw,22px);flex-wrap:wrap;min-width:0}
+.navlinks a{min-width:0}
+.navlinks .btn{white-space:normal;text-align:center}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:clamp(20px,4vw,44px);align-items:center}
+.hero-grid>*{min-width:0}
+.hero h1{max-width:100%;font-size:clamp(34px,5.2vw,66px);line-height:1.08;letter-spacing:clamp(-2px,-.16vw,-.7px);overflow-wrap:normal}
+.word-cycle{display:inline;white-space:normal}
+.word-cycle span{display:none!important;animation:none!important}
+.word-cycle span:first-child{display:inline!important}
+.preview{width:100%;justify-self:stretch;overflow:hidden;transform:none;animation:none}
+.preview-head{flex-wrap:wrap;align-items:flex-start}
+.preview-main{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}
+.preview-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+.kpi,.legend,.donut-wrap{min-width:0}
+.audiences{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.audience,.card,.step{min-width:0;max-width:100%;height:auto}
+.cta{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;overflow:hidden}
+.cta>div{flex:1 1 360px;position:relative;z-index:1}
+.cta>.btn{flex:0 1 auto;max-width:100%;position:relative;z-index:1;white-space:normal}
+.cta:after{z-index:0;max-width:100%;pointer-events:none}
+.footer-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
+@media(max-width:1000px){
+ .hero-grid{grid-template-columns:minmax(0,1fr);gap:28px}
+ .preview{max-width:100%}
+ .navlinks{gap:10px}
+ .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:760px){
+ .wrap{width:calc(100% - 32px)}
+ .nav{min-height:64px;flex-wrap:nowrap;gap:8px;padding-top:10px;padding-bottom:10px}
+ .navlinks{flex:0 1 auto;gap:8px}
+ .navlinks a:not(.btn){display:none}
+ .navlinks .btn{font-size:13px;padding:10px 12px}
+ .hero{padding:48px 0 54px}
+ .hero h1{font-size:clamp(34px,8.8vw,50px);line-height:1.1;letter-spacing:-1.2px}
+ .lead{font-size:17px}
+ .actions{display:flex;flex-wrap:wrap}
+ .actions .btn{flex:1 1 100%;width:100%;white-space:normal;text-align:center}
+ .preview{padding:16px}
+ .preview-main{grid-template-columns:minmax(0,1fr);justify-items:center}
+ .donut{width:min(132px,100%)}
+ .legend{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .legend-row{min-width:0;justify-content:center;flex-wrap:wrap;text-align:center}
+ .audiences,.cards,.steps{grid-template-columns:minmax(0,1fr)}
+ .audience,.card,.step{width:100%}
+ .cta{display:flex;flex-direction:column;align-items:flex-start;padding:24px;gap:16px}
+ .cta>div,.cta>.btn{width:100%;flex:1 1 auto}
+ .cta>.btn{text-align:center}
+ .section{padding:58px 0}
+}
+@media(max-width:420px){
+ .wrap{width:calc(100% - 24px)}
+ .logo{font-size:19px;letter-spacing:1.2px;gap:6px}
+ .brandmark{width:29px;height:29px}
+ .navlinks .btn{font-size:11px;padding:8px 9px}
+ .preview-kpis{gap:5px}
+ .kpi{padding:8px 5px}
+ .kpi b{font-size:18px}
+ .kpi small{font-size:9px}
+ .legend{gap:4px}
+ .legend-row{font-size:9px}
+ .cta h2{font-size:28px;line-height:1.15}
+}
+
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
