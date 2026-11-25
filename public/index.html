@@ -13,6 +13,38 @@
 .audience,.card,.step{transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease}.audience:hover,.card:hover{transform:translateY(-6px);border-color:#F49B45;box-shadow:0 18px 38px #0003}.step:hover{transform:translateY(-4px)}
 .btn{box-shadow:0 7px 18px #0002}.btn:hover{box-shadow:0 12px 24px #0003}.navlinks a:not(.btn){transition:color .2s}.navlinks a:not(.btn):hover{color:var(--lime)}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.reveal{opacity:1;transform:none}}
+
+/* Premium visual polish: layered glow, glass navigation and refined interactions */
+:root{--glow:rgba(53,198,176,.18);--orange-glow:rgba(244,155,69,.16)}
+body{background-image:radial-gradient(ellipse at 8% 4%,rgba(53,198,176,.075),transparent 30%),radial-gradient(ellipse at 92% 35%,rgba(244,155,69,.055),transparent 28%)}
+.nav{position:sticky;top:0;z-index:50;width:100%;padding-left:max(20px,calc((100% - 1160px)/2));padding-right:max(20px,calc((100% - 1160px)/2));background:rgba(16,43,70,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(184,201,213,.10)}
+.logo{transition:transform .25s ease,filter .25s ease}.logo:hover{transform:translateY(-2px);filter:drop-shadow(0 0 12px var(--glow))}
+.hero{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 78% 18%,#35C6B033,transparent 38%),radial-gradient(ellipse at 18% 92%,#F49B4514,transparent 34%),linear-gradient(180deg,#102B46,#173A56)}
+.hero:before,.hero:after{content:"";position:absolute;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(2px)}
+.hero:before{width:340px;height:340px;right:-130px;top:12%;border:1px solid rgba(53,198,176,.18);box-shadow:0 0 70px rgba(53,198,176,.10),inset 0 0 60px rgba(53,198,176,.06)}
+.hero:after{width:210px;height:210px;left:-100px;bottom:-90px;border:1px solid rgba(244,155,69,.18);box-shadow:0 0 70px rgba(244,155,69,.09)}
+.eyebrow{background:rgba(16,43,70,.42);box-shadow:0 0 26px rgba(244,155,69,.08)}
+h1 em{background:linear-gradient(100deg,#F49B45 5%,#FFD19A 48%,#35C6B0 95%);background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:gradientTravel 7s ease-in-out infinite}
+@keyframes gradientTravel{0%,100%{background-position:0% center}50%{background-position:100% center}}
+.preview{position:relative;border-color:rgba(53,198,176,.32);background:linear-gradient(145deg,rgba(31,70,94,.96),rgba(19,48,72,.98));box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 38px rgba(53,198,176,.09)}
+.preview:before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(53,198,176,.48),transparent 38%,rgba(244,155,69,.32));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
+.btn{position:relative;overflow:hidden;isolation:isolate;transition:transform .25s ease,box-shadow .25s ease,filter .25s ease}
+.btn:after{content:"";position:absolute;inset:-40% auto -40% -45%;width:28%;transform:skewX(-22deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);transition:left .55s ease;z-index:-1}
+.btn:hover:after{left:125%}.btn:hover{filter:brightness(1.06)}
+.btn.ghost{backdrop-filter:blur(8px);background:rgba(255,255,255,.025)}
+.section{position:relative}.section.alt{background:linear-gradient(180deg,rgba(21,52,78,.96),rgba(18,46,70,.98))}
+.section-head .kicker{display:inline-flex;align-items:center;gap:9px}.section-head .kicker:before{content:"";width:22px;height:2px;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.audience,.card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(27,64,92,.96),rgba(21,52,78,.96));box-shadow:0 12px 32px rgba(0,0,0,.10)}
+.audience:before,.card:before{content:"";position:absolute;inset:0 auto auto 0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--lime),transparent);opacity:.65}
+.audience:hover,.card:hover{box-shadow:0 20px 48px rgba(0,0,0,.24),0 0 28px rgba(53,198,176,.08)}
+.icon{transition:transform .3s ease,background .3s ease,box-shadow .3s ease}.card:hover .icon{transform:translateY(-3px) rotate(-4deg);background:#28536a;box-shadow:0 0 24px rgba(244,155,69,.13)}
+.step{position:relative}.step:before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:var(--teal);position:absolute;top:-5px;left:0;box-shadow:0 0 12px rgba(53,198,176,.65)}
+.cta{position:relative;overflow:hidden;background:radial-gradient(ellipse at 95% 10%,rgba(53,198,176,.17),transparent 40%),linear-gradient(120deg,#1B405C,#15344E);box-shadow:0 22px 55px rgba(0,0,0,.18)}
+.cta:after{content:"V";position:absolute;right:8%;top:50%;transform:translateY(-50%);font-size:clamp(130px,20vw,250px);font-weight:950;line-height:1;color:rgba(255,255,255,.025);pointer-events:none}
+.faq details{transition:padding .25s ease}.faq details[open]{padding-left:14px;border-left:2px solid var(--teal)}
+.footer{background:rgba(8,27,44,.28)}
+@media(max-width:800px){.nav{padding-left:14px;padding-right:14px}}
+@media(max-width:560px){.nav{padding-left:14px;padding-right:14px}.hero:before{width:240px;height:240px;right:-150px}.cta:after{right:3%;font-size:150px}}
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
