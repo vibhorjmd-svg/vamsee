@@ -193,6 +193,44 @@ h1{overflow-wrap:normal;word-break:normal}
 }
 
 
+
+/* Final responsive collision fixes */
+.nav{height:auto;min-height:82px;flex-wrap:wrap}
+.nav>.logo{flex:0 0 auto}
+.navlinks{min-width:0;max-width:100%;flex:0 1 auto;flex-wrap:wrap;justify-content:flex-end}
+.navlinks>*{min-width:0}
+.hero-grid,.hero-grid>*{min-width:0}
+.hero-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
+.preview-head,.ticket,.footer-inner{min-width:0;flex-wrap:wrap}
+.preview-head>*{min-width:0;overflow-wrap:anywhere}
+.ticket>*{min-width:0}
+.cta{isolation:isolate;min-width:0}
+.cta:after{z-index:-1}
+.cta>div,.cta>.btn{position:relative;z-index:1;min-width:0}
+.audiences,.cards,.steps{grid-template-columns:repeat(2,minmax(0,1fr))}
+.audience,.card,.step{min-width:0;max-width:100%}
+.audience h3,.card h3,.step h3{overflow-wrap:anywhere}
+@media(max-width:1000px){
+ .navlinks{flex-wrap:wrap}
+ .hero-grid{grid-template-columns:minmax(0,1fr)}
+ .preview{width:100%;max-width:none}
+}
+@media(max-width:760px){
+ .nav{flex-wrap:nowrap;align-items:center}
+ .navlinks{flex:0 1 auto}
+ .navlinks .btn{max-width:100%;white-space:normal}
+ .audiences,.cards,.steps{grid-template-columns:minmax(0,1fr)}
+ .cta{width:100%;padding:24px}
+ .cta>div{flex:1 1 100%}
+ .cta>.btn{width:100%;max-width:100%;white-space:normal}
+}
+@media(max-width:560px){
+ .preview-head{align-items:flex-start;flex-direction:column}
+ .ticket{align-items:flex-start}
+ .tag{white-space:normal}
+ .cta h2{font-size:clamp(26px,7vw,34px);line-height:1.15}
+}
+
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
