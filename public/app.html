@@ -31,8 +31,8 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 <body>
 <section id="loginGate" aria-labelledby="loginTitle">
   <div><div class="brand"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></div><span class="brandtagline">INTELLIGENT OPERATIONS. SEAMLESS SUPPORT.</span></div>
-  <h1 id="loginTitle">Private operations workspace</h1>
-  <p>Sign in to access the VAMSEE customer support and operations workspace.</p>
+  <h1 id="loginTitle">VAMSEE operations workspace</h1>
+  <p>Sign in to access both VAMSEE logistics operations and customer support workflows.</p>
   <form id="loginForm">
     <label for="loginEmail">Work email</label>
     <input id="loginEmail" type="email" autocomplete="username" maxlength="254" required>
@@ -58,9 +58,9 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
   <div id="loginError" role="alert" aria-live="polite"></div>
 </section>
 <main id="appContent" class="wrap">
-<header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · CUSTOMER OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
-<h1>Customer support, <span style="color:var(--lime)">under control.</span></h1>
-<p class="sub">Manage customer enquiries, complaints and service requests across industries. Classify issues, draft replies, track ownership and flag cases that need your team’s attention.</p>
+<header class="top"><div class="brand">VAM<span>SEE</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · LOGISTICS + CUSTOMER OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
+<h1>Logistics and customer operations, <span style="color:var(--lime)">connected.</span></h1>
+<p class="sub">One workspace for customer enquiries and logistics operations. Manage tickets, complaints and escalations alongside shipment records, tracking events and delivery exceptions.</p>
 <section class="panel" id="userAdminPanel" style="display:none;margin-bottom:18px" aria-labelledby="userAdminTitle">
 <h2 id="userAdminTitle">Workspace access management</h2>
 <p class="muted" style="font-size:13px">Create team accounts with least-privilege access. Share temporary passwords separately.</p>
@@ -96,7 +96,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </div>
 </section>
 <section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
-<h2 id="shipmentTitle">Optional logistics module · Shipment registry & tracking events</h2>
+<h2 id="shipmentTitle">3. Logistics operations · Shipment registry & tracking events</h2>
 <div class="panel" style="margin-top:18px">
  <div class="panelhead"><div><h3>Import shipment data</h3><p class="muted" style="font-size:13px">Upload a courier or order-management CSV export. No courier login, password or API key is needed.</p></div><span class="pill good">Offline import</span></div>
  <form id="shipmentImportForm" style="display:grid;gap:10px;max-width:620px">
@@ -139,8 +139,8 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </div>
 </section>
 <section class="panel">
-<h2>2. Customer operations queue</h2>
-<p class="muted" style="margin-top:-8px;font-size:13px">Live customer requests from the VAMSEE database. HIGH-priority tickets older than the configured demo target are flagged for escalation. Logistics tracking is available as an optional module.</p>
+<h2>2. Customer support & logistics service queue</h2>
+<p class="muted" style="margin-top:-8px;font-size:13px">Live service requests from the VAMSEE database, including general customer support and logistics-related enquiries. HIGH-priority tickets are flagged for escalation; shipment tracking and event history are managed in the logistics operations module below.</p>
 <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin:12px 0">
 <input id="ticketSearch" type="search" placeholder="Search customer, AWB or ticket" aria-label="Search tickets">
 <select id="priorityFilter" aria-label="Filter by priority"><option value="">All priorities</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="NORMAL">Normal</option></select>
