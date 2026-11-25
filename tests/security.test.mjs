@@ -73,3 +73,28 @@ test("Legacy shared-password login is retired", () => {
   assert.ok(script.includes("fetch('/api/auth/login'"));
   assert.ok(!script.includes("fetch('/api/login'"));
 });
+
+
+test("CSV shipment imports enforce permissions, row limits, validation, and tenant-scoped upserts", () => {
+  assert.ok(worker.includes('url.pathname==="/api/shipments/import"'));
+  assert.ok(worker.includes("if(!canOperate)return json({error:\"Your role cannot import shipments.\"},403)"));
+  assert.ok(worker.includes("rows.length>200"));
+  assert.ok(worker.includes("const seen=new Set()"));
+  assert.ok(worker.includes("WHERE organization_id=? AND tracking_number=?"));
+  assert.ok(worker.includes("await env.DB.batch(statements.slice(i,i+40))"));
+  assert.ok(worker.includes("shipments.csv_imported"));
+});
+
+test("CSV imports record changed shipment statuses in tracking history", () => {
+  assert.ok(worker.includes("const effectiveStatus=(!suppliedStatus&&existing)?existing.current_status:status"));
+  assert.ok(worker.includes("const changed=effectiveStatus!==\"unknown\""));
+  assert.ok(worker.includes("shipment_events(id,organization_id,shipment_id,event_status,description,event_time,source)"));
+  assert.ok(worker.includes("'csv_import'"));
+  assert.ok(worker.includes("Shipment status imported from CSV"));
+});
+
+test("CSV imports preserve existing status when the optional status column is blank", () => {
+  assert.ok(worker.includes("const suppliedStatus=String(row?.current_status||\"\").trim().toLowerCase()"));
+  assert.ok(worker.includes("current_status=excluded.current_status"));
+  assert.ok(worker.includes("const effectiveStatus=(!suppliedStatus&&existing)?existing.current_status:status"));
+});
