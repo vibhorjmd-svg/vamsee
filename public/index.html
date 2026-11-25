@@ -309,6 +309,45 @@ h1,h2,h3,p,li,a,summary,small,strong,span{overflow-wrap:anywhere}
  .cta h2{font-size:28px;line-height:1.15}
 }
 
+
+/* Contact section: bold black premium finish */
+#contact.cta{
+  position:relative;
+  isolation:isolate;
+  background:
+    radial-gradient(ellipse at 88% 8%,rgba(40,123,255,.22),transparent 38%),
+    radial-gradient(ellipse at 5% 100%,rgba(255,138,50,.13),transparent 42%),
+    linear-gradient(135deg,#03060D 0%,#080F1D 58%,#0A1425 100%);
+  border:1px solid rgba(116,164,235,.38);
+  box-shadow:0 26px 70px rgba(0,0,0,.48),0 0 34px rgba(40,123,255,.12),inset 0 1px 0 rgba(255,255,255,.07);
+}
+#contact.cta:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  padding:1px;
+  background:linear-gradient(115deg,rgba(255,138,50,.72),rgba(40,123,255,.55) 48%,rgba(57,214,194,.42));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask-composite:exclude;
+  pointer-events:none;
+  z-index:0;
+}
+#contact.cta:after{color:rgba(255,255,255,.035);z-index:0}
+#contact.cta .kicker{color:#FFAA62}
+#contact.cta h2{color:#F7FAFF;text-shadow:0 3px 24px rgba(40,123,255,.16)}
+#contact.cta p{color:#C5D1E2}
+#contact.cta p a{color:#FFB15C!important;text-decoration-color:rgba(255,177,92,.7)!important}
+#contact.cta>.btn{
+  background:linear-gradient(110deg,#FF862F,#FFB45F);
+  color:#101827;
+  border:1px solid rgba(255,205,157,.55);
+  box-shadow:0 12px 30px rgba(255,138,50,.22),0 0 0 4px rgba(255,138,50,.07);
+}
+#contact.cta>.btn:hover{box-shadow:0 16px 36px rgba(255,138,50,.32),0 0 0 5px rgba(255,138,50,.10)}
+@media(max-width:760px){#contact.cta{padding:26px}}
+
 </style></head><body>
 <header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
