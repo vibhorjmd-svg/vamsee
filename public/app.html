@@ -96,11 +96,11 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </div>
 </section>
 <section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
-<h2 id="shipmentTitle">Shipment registry & tracking events</h2>
+<h2 id="shipmentTitle">Optional logistics module · Shipment registry & tracking events</h2>
 <div class="panel" style="margin-top:18px">
  <div class="panelhead"><div><h3>Import shipment data</h3><p class="muted" style="font-size:13px">Upload a courier or order-management CSV export. No courier login, password or API key is needed.</p></div><span class="pill good">Offline import</span></div>
  <form id="shipmentImportForm" style="display:grid;gap:10px;max-width:620px">
-  <label for="shipmentCsvFile">Shipment CSV file</label><input id="shipmentCsvFile" type="file" accept=".csv,text/csv" required>
+  <label for="shipmentCsvFile">Shipment CSV file (optional logistics module)</label><input id="shipmentCsvFile" type="file" accept=".csv,text/csv" required>
   <p class="muted" style="font-size:12px;margin:0">Required: tracking_number. Optional: carrier_code or carrier; current_status or status; last_tracking_at; external_reference. Status values such as “In Transit” and “Delivered” are normalized automatically. Maximum 200 rows per upload.</p>
   <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="shipmentImportButton" type="submit">Import CSV</button><button class="btn secondary" id="shipmentTemplateButton" type="button">Download CSV template</button><button class="btn secondary" id="shipmentExportButton" type="button">Export workspace CSV</button></div>
   <p id="shipmentImportMessage" class="muted" role="status" aria-live="polite"></p>
@@ -117,7 +117,7 @@ h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:0 0 10px}.sub{color:var
 </form>
 <p id="shipmentMessage" class="muted" role="status" aria-live="polite"></p>
 <div class="shipment-insights" aria-labelledby="shipmentInsightsTitle">
- <div class="shipment-chart-copy"><h3 id="shipmentInsightsTitle">Shipment status overview</h3><p class="muted" style="font-size:12px;margin:4px 0 0">Live breakdown from your workspace shipment records.</p></div>
+ <div class="shipment-chart-copy"><h3 id="shipmentInsightsTitle">Logistics shipment status overview</h3><p class="muted" style="font-size:12px;margin:4px 0 0">Live breakdown from your workspace shipment records. This panel is only for logistics workflows.</p></div>
  <div class="shipment-chart-row"><div id="shipmentDonut" class="shipment-donut" role="img" aria-label="Shipment status distribution"><span><strong id="shipmentDonutTotal">0</strong><small>Shipments</small></span></div><div id="shipmentLegend" class="shipment-legend"><p class="muted">Loading live shipment data…</p></div></div>
 </div>
 <div id="shipmentList"><p class="muted">Loading shipments…</p></div>
@@ -157,20 +157,20 @@ let latestReply='';
 let allTickets=[];
 let currentUser=null;
 const configs={
- general:{priority:'NORMAL',team:'Customer Support',sla:'Review and respond',reply:(n)=>'Hello '+n+',\\n\\nThank you for contacting us. We have received your request and our support team will review the details. If any additional information is needed, we will contact you through the agreed support channel.\\n\\nVAMSEE Support'},
- complaint:{priority:'HIGH',team:'Customer Experience / Escalations',sla:'Review complaint and assign an owner',reply:(n)=>'Hello '+n+',\\n\\nWe are sorry to hear about your experience. Your concern has been recorded for review by the appropriate team. We will verify the details before sharing an update.\\n\\nVAMSEE Support'},
- billing:{priority:'MEDIUM',team:'Billing Support',sla:'Verify account and transaction details',reply:(n)=>'Hello '+n+',\\n\\nThank you for reaching out about your billing query. Our team will review the information and confirm the next steps. Please do not share passwords, OTPs or full payment-card details.\\n\\nVAMSEE Support'},
- technical:{priority:'MEDIUM',team:'Technical Support',sla:'Triage issue and gather diagnostic details',reply:(n)=>'Hello '+n+',\\n\\nThanks for reporting this technical issue. Our support team will review the details. If possible, please share the steps to reproduce the issue and any relevant error message, without including passwords or sensitive data.\\n\\nVAMSEE Support'},
- onboarding:{priority:'NORMAL',team:'Customer Onboarding',sla:'Review onboarding status and next steps',reply:(n)=>'Hello '+n+',\\n\\nWelcome, and thank you for contacting us. Our onboarding team will review your request and guide you through the next steps.\\n\\nVAMSEE Support'},
- refund:{priority:'MEDIUM',team:'Returns & Refunds',sla:'Check order and applicable policy',reply:(n)=>'Hello '+n+',\\n\\nWe have received your return or refund request. Our team will verify the order details and applicable policy before confirming the available options.\\n\\nVAMSEE Support'},
- appointment:{priority:'NORMAL',team:'Bookings / Scheduling',sla:'Check booking availability',reply:(n)=>'Hello '+n+',\\n\\nThank you for your booking enquiry. Our team will review the requested details and confirm availability through the agreed channel.\\n\\nVAMSEE Support'},
- admissions:{priority:'NORMAL',team:'Admissions Support',sla:'Review application enquiry',reply:(n)=>'Hello '+n+',\\n\\nThank you for your interest. Our team will review your enquiry and share the relevant application information and next steps.\\n\\nVAMSEE Support'},
- delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review shipment delay',reply:(n,t)=>'Hello '+n+',\\n\\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check for the latest confirmed status.\\n\\nVAMSEE Support'},
- tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\\n\\nThanks for contacting us about shipment '+t+'. We have marked this for a tracking-status check.\\n\\nVAMSEE Support'},
- delivery:{priority:'HIGH',team:'Delivery investigation',sla:'Escalate for delivery proof',reply:(n,t)=>'Hello '+n+',\\n\\nWe’re sorry shipment '+t+' is marked delivered but has not reached you. We have flagged this for an investigation.\\n\\nVAMSEE Support'},
- address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\\n\\nWe have received your address correction request for '+t+'. Our team will verify whether an update is still possible before confirming.\\n\\nVAMSEE Support'},
- damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request evidence and escalate',reply:(n,t)=>'Hello '+n+',\\n\\nWe’re sorry the parcel associated with '+t+' appears to be damaged. Please preserve the packaging and share clear photos through the verified support channel.\\n\\nVAMSEE Support'},
- other:{priority:'NORMAL',team:'Customer Support',sla:'Review and route request',reply:(n)=>'Hello '+n+',\\n\\nThank you for contacting us. We have recorded your request and will route it to the appropriate team for review.\\n\\nVAMSEE Support'}
+ general:{priority:'NORMAL',team:'Customer Support',sla:'Review and respond',reply:(n)=>'Hello '+n+',\n\nThank you for contacting us. We have received your request and our support team will review the details. If any additional information is needed, we will contact you through the agreed support channel.\n\nVAMSEE Support'},
+ complaint:{priority:'HIGH',team:'Customer Experience / Escalations',sla:'Review complaint and assign an owner',reply:(n)=>'Hello '+n+',\n\nWe are sorry to hear about your experience. Your concern has been recorded for review by the appropriate team. We will verify the details before sharing an update.\n\nVAMSEE Support'},
+ billing:{priority:'MEDIUM',team:'Billing Support',sla:'Verify account and transaction details',reply:(n)=>'Hello '+n+',\n\nThank you for reaching out about your billing query. Our team will review the information and confirm the next steps. Please do not share passwords, OTPs or full payment-card details.\n\nVAMSEE Support'},
+ technical:{priority:'MEDIUM',team:'Technical Support',sla:'Triage issue and gather diagnostic details',reply:(n)=>'Hello '+n+',\n\nThanks for reporting this technical issue. Our support team will review the details. If possible, please share the steps to reproduce the issue and any relevant error message, without including passwords or sensitive data.\n\nVAMSEE Support'},
+ onboarding:{priority:'NORMAL',team:'Customer Onboarding',sla:'Review onboarding status and next steps',reply:(n)=>'Hello '+n+',\n\nWelcome, and thank you for contacting us. Our onboarding team will review your request and guide you through the next steps.\n\nVAMSEE Support'},
+ refund:{priority:'MEDIUM',team:'Returns & Refunds',sla:'Check order and applicable policy',reply:(n)=>'Hello '+n+',\n\nWe have received your return or refund request. Our team will verify the order details and applicable policy before confirming the available options.\n\nVAMSEE Support'},
+ appointment:{priority:'NORMAL',team:'Bookings / Scheduling',sla:'Check booking availability',reply:(n)=>'Hello '+n+',\n\nThank you for your booking enquiry. Our team will review the requested details and confirm availability through the agreed channel.\n\nVAMSEE Support'},
+ admissions:{priority:'NORMAL',team:'Admissions Support',sla:'Review application enquiry',reply:(n)=>'Hello '+n+',\n\nThank you for your interest. Our team will review your enquiry and share the relevant application information and next steps.\n\nVAMSEE Support'},
+ delay:{priority:'HIGH',team:'Carrier / operations desk',sla:'Review shipment delay',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry your shipment '+t+' has not had a recent tracking update. We have flagged this for an operations review and will check for the latest confirmed status.\n\nVAMSEE Support'},
+ tracking:{priority:'MEDIUM',team:'Tracking support',sla:'Check next carrier scan',reply:(n,t)=>'Hello '+n+',\n\nThanks for contacting us about shipment '+t+'. We have marked this for a tracking-status check.\n\nVAMSEE Support'},
+ delivery:{priority:'HIGH',team:'Delivery investigation',sla:'Escalate for delivery proof',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry shipment '+t+' is marked delivered but has not reached you. We have flagged this for an investigation.\n\nVAMSEE Support'},
+ address:{priority:'NORMAL',team:'Address validation',sla:'Verify before dispatch',reply:(n,t)=>'Hello '+n+',\n\nWe have received your address correction request for '+t+'. Our team will verify whether an update is still possible before confirming.\n\nVAMSEE Support'},
+ damage:{priority:'HIGH',team:'Claims / damage desk',sla:'Request evidence and escalate',reply:(n,t)=>'Hello '+n+',\n\nWe’re sorry the parcel associated with '+t+' appears to be damaged. Please preserve the packaging and share clear photos through the verified support channel.\n\nVAMSEE Support'},
+ other:{priority:'NORMAL',team:'Customer Support',sla:'Review and route request',reply:(n)=>'Hello '+n+',\n\nThank you for contacting us. We have recorded your request and will route it to the appropriate team for review.\n\nVAMSEE Support'}
 };
 const ADMIN_ROLE_OPTIONS={
  platform_admin:["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"],
