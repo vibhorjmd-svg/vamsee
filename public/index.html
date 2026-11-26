@@ -1,461 +1,142 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="VAMSEE brings logistics operations solutions and customer support & business process services together in one connected offering."><meta name="theme-color" content="#102B46"><title>VAMSEE — Logistics Operations & Customer Support Solutions</title>
 <style>
-:root{--bg:#102B46;--panel:#173A56;--line:#31536A;--text:#F4F8FB;--muted:#B8C9D5;--lime:#F49B45;--teal:#35C6B0;--ink:#102B46}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.6 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Arial}a{color:inherit;text-decoration:none}.wrap{width:min(1160px,calc(100% - 40px));margin:auto}.nav{height:82px;display:flex;align-items:center;justify-content:space-between;gap:20px}.logo{display:inline-flex;align-items:center;gap:9px;font-weight:900;letter-spacing:2.5px;font-size:25px}.logo span{color:var(--teal)}.brandmark{width:34px;height:34px;flex:none}.navlinks{display:flex;align-items:center;gap:28px;color:var(--muted);font-size:14px}.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:10px;padding:12px 18px;font-weight:800;background:var(--lime);color:var(--ink);border:1px solid var(--lime);transition:.2s}.btn:hover{transform:translateY(-2px)}.btn.ghost{background:transparent;color:var(--text);border-color:var(--line)}.hero{padding:82px 0 76px;background:radial-gradient(ellipse at 78% 20%,#35C6B033,transparent 42%),linear-gradient(180deg,#102B46,#173A56)}.eyebrow{display:inline-flex;align-items:center;gap:8px;border:1px solid #46614c;border-radius:99px;padding:6px 12px;color:var(--lime);font-size:12px;font-weight:800;letter-spacing:1.1px;text-transform:uppercase}.dot{width:7px;height:7px;background:var(--lime);border-radius:50%}.hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:44px;align-items:center}h1{font-size:clamp(42px,6vw,70px);line-height:1.04;letter-spacing:-2.7px;max-width:850px;margin:22px 0}h1 em{font-style:normal;color:var(--lime)}.lead{font-size:19px;color:var(--muted);max-width:690px;margin:0 0 28px}.actions{display:flex;gap:12px;flex-wrap:wrap}.micro{color:#8fa397;font-size:12px;margin-top:18px}.preview{background:#173A56;border:1px solid #31536A;border-radius:18px;padding:22px;box-shadow:0 24px 70px #0004;transform:none;min-width:0;width:100%;max-width:510px;justify-self:end;overflow:hidden}.preview-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-bottom:16px;border-bottom:1px solid var(--line);font-size:13px}.live{color:#91d9b0;font-size:10px;white-space:nowrap}.preview-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0}.kpi{background:#20435B;border-radius:10px;padding:12px;min-width:0}.kpi b{display:block;font-size:23px}.kpi small{color:var(--muted);font-size:10px}.preview-main{display:grid;grid-template-columns: minmax(125px,.8fr) minmax(0,1.2fr);gap:18px;align-items:center;margin:18px 0}.donut-wrap{display:grid;justify-items:center;gap:10px;min-width:0}.donut{width:142px;max-width:100%;aspect-ratio:1;border-radius:50%;background:conic-gradient(#35C6B0 0 68%,#F49B45 68% 90%,#E16C6C 90% 100%);display:grid;place-items:center;position:relative}.donut:before{content:"";position:absolute;inset:17px;border-radius:50%;background:#173A56}.donut-center{position:relative;text-align:center}.donut-center b{display:block;font-size:25px;line-height:1.1}.donut-center small{font-size:10px;color:var(--muted)}.chart-caption{font-size:11px;color:var(--muted);text-align:center}.legend{display:grid;gap:9px;min-width:0}.legend-row{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--muted)}.legend-label{display:flex;align-items:center;gap:7px;min-width:0}.legend-dot{width:8px;height:8px;border-radius:50%;flex:none}.legend-row b{color:var(--text);font-size:12px}.preview-activity{border-top:1px solid var(--line);padding-top:6px}.preview-activity-title{font-size:11px;color:var(--muted);font-weight:750;letter-spacing:.7px;margin:8px 0 2px}.ticket{padding:11px 0;border-top:1px solid #31536A;display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px}.ticket span{color:var(--muted)}.tag{border-radius:20px;padding:3px 8px;background:#4a3426;color:#ffd49a;font-size:10px;white-space:nowrap}.tag.green{background:#234334;color:#a8edbd}.section{padding:82px 0}.section.alt{background:#15344E}.section-head{max-width:720px;margin-bottom:36px}.kicker{color:var(--lime);font-size:12px;font-weight:850;letter-spacing:1.4px;text-transform:uppercase}.section h2{font-size:clamp(30px,4vw,44px);line-height:1.12;letter-spacing:-1.2px;margin:10px 0 13px}.section-head p{color:var(--muted);margin:0}.audiences{display:grid;grid-template-columns:1fr 1fr;gap:18px}.audience{padding:30px;border-radius:17px;border:1px solid var(--line);background:linear-gradient(145deg,#1B405C,#15344E)}.audience .label{color:var(--lime);font-size:11px;letter-spacing:1.3px;font-weight:850}.audience h3{font-size:26px;margin:9px 0}.audience p,.card p{color:var(--muted)}.audience ul{padding-left:19px;color:#dce8de;font-size:14px}.audience li{margin:7px 0}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:23px}.icon{width:42px;height:42px;display:grid;place-items:center;background:#20435B;border-radius:12px;color:var(--lime);font-size:21px}.card h3{font-size:18px;margin:17px 0 7px}.card p{font-size:14px;margin:0}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:13px}.step{border-top:2px solid #526b52;padding:18px 14px 0}.step b{color:var(--lime);font-size:12px;letter-spacing:1px}.step h3{font-size:16px;margin:9px 0 5px}.step p{color:var(--muted);font-size:13px;margin:0}.cta{padding:56px;border-radius:20px;background:linear-gradient(120deg,#1B405C,#15344E);border:1px solid #31536A;display:flex;justify-content:space-between;align-items:center;gap:25px}.cta h2{font-size:clamp(28px,4vw,40px);margin:0 0 8px}.cta p{color:#c2d1c4;margin:0}.faq{max-width:820px}.faq details{border-bottom:1px solid var(--line);padding:17px 0}.faq summary{cursor:pointer;font-weight:750}.faq p{color:var(--muted);font-size:14px;margin-bottom:0}.footer{padding:34px 0;border-top:1px solid var(--line);color:var(--muted);font-size:13px}.footer-inner{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.footer a{color:var(--lime)}@media(max-width:800px){.hero-grid{grid-template-columns:1fr}.preview{justify-self:stretch;max-width:none}.cards{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.navlinks{gap:12px}.navlinks a:not(.btn){display:none}}@media(max-width:560px){.preview{padding:16px}.preview-main{grid-template-columns: minmax(110px,.8fr) minmax(0,1fr);gap:12px}.donut{width:120px}.preview-kpis{gap:6px}.kpi{padding:9px}.kpi b{font-size:20px}.wrap{width:min(100% - 28px,1160px)}.hero{padding:54px 0}.section{padding:60px 0}.cards,.audiences,.steps{grid-template-columns:1fr}.cta{padding:28px;display:block}.cta .btn{margin-top:20px}.nav{height:70px}.logo{font-size:22px}}
-
-/* Motion design: gentle reveals, rotating hero message and responsive micro-interactions */
-@keyframes heroRise{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
-@keyframes wordSwap{0%,5%{opacity:0;transform:translateY(12px)}10%,29%{opacity:1;transform:translateY(0)}35%,100%{opacity:0;transform:translateY(-10px)}}
-@keyframes softFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-.hero .eyebrow{animation:heroRise .65s .05s both}.hero h1{animation:heroRise .75s .18s both}.hero .lead{animation:heroRise .75s .3s both}.hero .actions{animation:heroRise .75s .42s both}.hero .micro{animation:heroRise .75s .52s both}.preview{animation:heroRise .9s .25s both,softFloat 7s 1.2s ease-in-out infinite}
-.word-cycle{display:inline-grid;vertical-align:baseline;white-space:normal}.word-cycle span{grid-area:1/1;animation:wordSwap 9s infinite}.word-cycle span:nth-child(2){animation-delay:3s}.word-cycle span:nth-child(3){animation-delay:6s}
-.reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}.reveal.is-visible{opacity:1;transform:translateY(0)}
-.audience,.card,.step{transition:transform .28s ease,border-color .28s ease,box-shadow .28s ease}.audience:hover,.card:hover{transform:translateY(-6px);border-color:#F49B45;box-shadow:0 18px 38px #0003}.step:hover{transform:translateY(-4px)}
-.btn{box-shadow:0 7px 18px #0002}.btn:hover{box-shadow:0 12px 24px #0003}.navlinks a:not(.btn){transition:color .2s}.navlinks a:not(.btn):hover{color:var(--lime)}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}.reveal{opacity:1;transform:none}}
-
-/* Premium visual polish: layered glow, glass navigation and refined interactions */
-:root{--glow:rgba(53,198,176,.18);--orange-glow:rgba(244,155,69,.16)}
-body{background-image:radial-gradient(ellipse at 8% 4%,rgba(53,198,176,.075),transparent 30%),radial-gradient(ellipse at 92% 35%,rgba(244,155,69,.055),transparent 28%)}
-.nav{position:sticky;top:0;z-index:50;width:100%;padding-left:max(20px,calc((100% - 1160px)/2));padding-right:max(20px,calc((100% - 1160px)/2));background:rgba(16,43,70,.82);backdrop-filter:blur(18px);border-bottom:1px solid rgba(184,201,213,.10)}
-.logo{transition:transform .25s ease,filter .25s ease}.logo:hover{transform:translateY(-2px);filter:drop-shadow(0 0 12px var(--glow))}
-.hero{position:relative;isolation:isolate;overflow:hidden;background:radial-gradient(ellipse at 78% 18%,#35C6B033,transparent 38%),radial-gradient(ellipse at 18% 92%,#F49B4514,transparent 34%),linear-gradient(180deg,#102B46,#173A56)}
-.hero:before,.hero:after{content:"";position:absolute;z-index:-1;pointer-events:none;border-radius:50%;filter:blur(2px)}
-.hero:before{width:340px;height:340px;right:-130px;top:12%;border:1px solid rgba(53,198,176,.18);box-shadow:0 0 70px rgba(53,198,176,.10),inset 0 0 60px rgba(53,198,176,.06)}
-.hero:after{width:210px;height:210px;left:-100px;bottom:-90px;border:1px solid rgba(244,155,69,.18);box-shadow:0 0 70px rgba(244,155,69,.09)}
-.eyebrow{background:rgba(16,43,70,.42);box-shadow:0 0 26px rgba(244,155,69,.08)}
-h1 em{background:linear-gradient(100deg,#F49B45 5%,#FFD19A 48%,#35C6B0 95%);background-size:200% auto;background-clip:text;-webkit-background-clip:text;color:transparent;animation:gradientTravel 7s ease-in-out infinite}
-@keyframes gradientTravel{0%,100%{background-position:0% center}50%{background-position:100% center}}
-.preview{position:relative;border-color:rgba(53,198,176,.32);background:linear-gradient(145deg,rgba(31,70,94,.96),rgba(19,48,72,.98));box-shadow:0 24px 80px rgba(0,0,0,.34),0 0 38px rgba(53,198,176,.09)}
-.preview:before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1px;background:linear-gradient(135deg,rgba(53,198,176,.48),transparent 38%,rgba(244,155,69,.32));-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none}
-.btn{position:relative;overflow:hidden;isolation:isolate;transition:transform .25s ease,box-shadow .25s ease,filter .25s ease}
-.btn:after{content:"";position:absolute;inset:-40% auto -40% -45%;width:28%;transform:skewX(-22deg);background:linear-gradient(90deg,transparent,rgba(255,255,255,.42),transparent);transition:left .55s ease;z-index:-1}
-.btn:hover:after{left:125%}.btn:hover{filter:brightness(1.06)}
-.btn.ghost{backdrop-filter:blur(8px);background:rgba(255,255,255,.025)}
-.section{position:relative}.section.alt{background:linear-gradient(180deg,rgba(21,52,78,.96),rgba(18,46,70,.98))}
-.section-head .kicker{display:inline-flex;align-items:center;gap:9px}.section-head .kicker:before{content:"";width:22px;height:2px;background:var(--teal);box-shadow:0 0 10px var(--teal)}
-.audience,.card{position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(27,64,92,.96),rgba(21,52,78,.96));box-shadow:0 12px 32px rgba(0,0,0,.10)}
-.audience:before,.card:before{content:"";position:absolute;inset:0 auto auto 0;width:100%;height:2px;background:linear-gradient(90deg,transparent,var(--teal),var(--lime),transparent);opacity:.65}
-.audience:hover,.card:hover{box-shadow:0 20px 48px rgba(0,0,0,.24),0 0 28px rgba(53,198,176,.08)}
-.icon{transition:transform .3s ease,background .3s ease,box-shadow .3s ease}.card:hover .icon{transform:translateY(-3px) rotate(-4deg);background:#28536a;box-shadow:0 0 24px rgba(244,155,69,.13)}
-.step{position:relative}.step:before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:var(--teal);position:absolute;top:-5px;left:0;box-shadow:0 0 12px rgba(53,198,176,.65)}
-.cta{position:relative;overflow:hidden;background:radial-gradient(ellipse at 95% 10%,rgba(53,198,176,.17),transparent 40%),linear-gradient(120deg,#1B405C,#15344E);box-shadow:0 22px 55px rgba(0,0,0,.18)}
-.cta:after{content:"V";position:absolute;right:8%;top:50%;transform:translateY(-50%);font-size:clamp(130px,20vw,250px);font-weight:950;line-height:1;color:rgba(255,255,255,.025);pointer-events:none}
-.faq details{transition:padding .25s ease}.faq details[open]{padding-left:14px;border-left:2px solid var(--teal)}
-.footer{background:rgba(8,27,44,.28)}
-@media(max-width:800px){.nav{padding-left:14px;padding-right:14px}}
-@media(max-width:560px){.nav{padding-left:14px;padding-right:14px}.hero:before{width:240px;height:240px;right:-150px}.cta:after{right:3%;font-size:150px}}
-
-/* VAMSEE colour system v2: midnight, electric blue and confident orange */
-:root{--midnight:#070D18;--navy:#0B1830;--blue:#123A70;--electric:#287BFF;--orange:#FF8A32;--orange2:#FFB15C;--teal:#39D6C2;--panel:#101F36;--line:rgba(143,177,220,.2)}
-body{background:#080E19;background-image:radial-gradient(ellipse at 8% 8%,rgba(40,123,255,.16),transparent 34%),radial-gradient(ellipse at 92% 28%,rgba(255,138,50,.10),transparent 30%),linear-gradient(145deg,#080E19 0%,#0B1730 48%,#07101E 100%)}
-.nav{background:rgba(7,13,24,.82);border-bottom:1px solid rgba(99,151,226,.18);box-shadow:0 8px 30px rgba(0,0,0,.16)}
-.hero{background:radial-gradient(ellipse at 78% 16%,rgba(40,123,255,.25),transparent 39%),radial-gradient(ellipse at 8% 92%,rgba(255,138,50,.16),transparent 34%),linear-gradient(125deg,#080E19 0%,#10294D 58%,#0A1830 100%)}
-.hero:before{border-color:rgba(40,123,255,.32);box-shadow:0 0 90px rgba(40,123,255,.16),inset 0 0 60px rgba(40,123,255,.08)}
-.hero:after{border-color:rgba(255,138,50,.32);box-shadow:0 0 70px rgba(255,138,50,.14)}
-h1 em{background-image:linear-gradient(100deg,#FF963F 4%,#FFD09A 42%,#67A8FF 78%,#39D6C2 100%)}
-.section{background:linear-gradient(180deg,#080E19 0%,#0B1425 100%)}
-.section.alt{background:radial-gradient(ellipse at 88% 0%,rgba(40,123,255,.19),transparent 42%),linear-gradient(145deg,#0D1D38 0%,#102B50 52%,#0A172B 100%);border-top:1px solid rgba(76,139,225,.12);border-bottom:1px solid rgba(76,139,225,.10)}
-#workflow{background:radial-gradient(ellipse at 8% 30%,rgba(255,138,50,.11),transparent 38%),linear-gradient(180deg,#080E19,#0D1728)}
-#about{background:radial-gradient(ellipse at 90% 15%,rgba(40,123,255,.22),transparent 44%),linear-gradient(135deg,#0B1A32,#12345D 58%,#0A172B)}
-.audience{background:linear-gradient(145deg,rgba(19,48,86,.96),rgba(12,25,46,.98));border-color:rgba(87,151,236,.28)}
-.audience:nth-child(2){background:linear-gradient(145deg,rgba(68,39,27,.78),rgba(17,29,47,.98));border-color:rgba(255,153,74,.3)}
-.card{background:linear-gradient(145deg,#142A49,#0D1B31);border-color:rgba(106,155,220,.22)}
-.card:nth-child(3n+2){background:linear-gradient(145deg,#193B68,#10213B)}
-.icon{background:linear-gradient(145deg,rgba(40,123,255,.24),rgba(57,214,194,.12));color:#83B9FF;border:1px solid rgba(98,160,255,.22)}
-.kpi{background:linear-gradient(145deg,#1B3C67,#142A49);border:1px solid rgba(112,166,238,.16)}
-.preview{background:linear-gradient(145deg,rgba(16,34,61,.98),rgba(9,20,38,.98));border-color:rgba(76,151,255,.38);box-shadow:0 26px 85px rgba(0,0,0,.42),0 0 42px rgba(40,123,255,.12)}
-.preview:before{background:linear-gradient(135deg,rgba(40,123,255,.65),transparent 38%,rgba(255,138,50,.55))}
-.cta{background:radial-gradient(ellipse at 90% 0%,rgba(255,255,255,.18),transparent 42%),linear-gradient(112deg,#F07825 0%,#FF963F 48%,#174B91 100%);border:1px solid rgba(255,190,130,.55);box-shadow:0 24px 65px rgba(0,0,0,.3),0 0 45px rgba(255,138,50,.12)}
-.cta p{color:#FFF0E2}.cta h2{color:#fff}.cta .btn{background:#08172C;color:#fff;border-color:#08172C;box-shadow:0 10px 26px rgba(7,13,24,.3)}
-.footer{background:#060B14;border-top:1px solid rgba(111,157,220,.18)}
-/* Distinct, tactile button treatments */
-.btn{border:1px solid transparent;border-radius:12px;padding:13px 21px;background:linear-gradient(110deg,#FF862F,#FFB04F);color:#101827;box-shadow:0 8px 22px rgba(255,138,50,.2),inset 0 1px 0 rgba(255,255,255,.3);font-weight:850;letter-spacing:.1px;transition:transform .25s ease,box-shadow .25s ease,background .25s ease,border-color .25s ease}
-.btn:hover{transform:translateY(-3px) scale(1.015);box-shadow:0 14px 30px rgba(255,138,50,.3),0 0 0 4px rgba(255,138,50,.09);filter:saturate(1.12) brightness(1.04)}
-.btn:active{transform:translateY(-1px) scale(.99)}
-.btn.ghost{background:linear-gradient(120deg,rgba(40,123,255,.18),rgba(57,214,194,.09));color:#EAF3FF;border:1px solid rgba(107,171,255,.55);box-shadow:0 8px 22px rgba(12,62,130,.14),inset 0 1px 0 rgba(255,255,255,.08)}
-.btn.ghost:hover{background:linear-gradient(120deg,rgba(40,123,255,.34),rgba(57,214,194,.17));border-color:#78B7FF;box-shadow:0 14px 30px rgba(40,123,255,.22),0 0 0 4px rgba(40,123,255,.10)}
-.navlinks .btn.ghost{padding:10px 16px;background:linear-gradient(110deg,#174A89,#12315B);border-color:rgba(108,173,255,.6);color:#fff}
-.navlinks .btn.ghost:hover{background:linear-gradient(110deg,#2168BD,#174A89)}
-a:focus-visible,summary:focus-visible{outline:3px solid #67A8FF;outline-offset:4px;border-radius:8px}
-@media(max-width:560px){.btn{padding:12px 16px}.actions .btn{width:100%}.navlinks .btn.ghost{padding:9px 11px}}
-
-
-/* Responsive layout hardening: prevent text, cards and navigation collisions */
-html,body{max-width:100%;overflow-x:hidden}
-.wrap,.hero-grid,.hero-grid>*,.section .wrap,.audiences,.audience,.cards,.card,.cta,.footer-inner{min-width:0}
-h1,h2,h3,p,li,a,summary{overflow-wrap:break-word}
-.hero-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
-.hero-grid>div:first-child{min-width:0}
-.preview{min-width:0}
-.nav{gap:16px}
-.navlinks{min-width:0;flex-wrap:nowrap;gap:clamp(10px,1.7vw,24px)}
-.navlinks .btn{white-space:nowrap;flex:none}
-.word-cycle{max-width:100%;min-width:0}
-.word-cycle span{max-width:100%}
-.audiences{align-items:stretch}
-.audience{display:flex;flex-direction:column;align-items:flex-start}
-.audience .btn{margin-top:auto}
-.cards{align-items:stretch}
-.card{height:100%}
-.cta{flex-wrap:wrap}
-.cta>div{min-width:0;flex:1 1 440px}
-.cta>.btn{flex:0 0 auto;white-space:nowrap}
-.preview-kpis,.preview-main{min-width:0}
-.kpi,.legend,.donut-wrap{min-width:0}
-@media(max-width:1000px){
- .hero-grid{grid-template-columns:minmax(0,1fr)}
- .preview{justify-self:stretch;max-width:100%}
- .navlinks{gap:12px}
- .navlinks a:not(.btn){display:none}
-}
-@media(max-width:700px){
- .wrap{width:calc(100% - 32px)}
- .nav{height:auto;min-height:68px;padding-top:10px;padding-bottom:10px;flex-wrap:nowrap}
- .navlinks{margin-left:auto}
- .hero{padding:52px 0 58px}
- .hero h1{font-size:clamp(36px,10vw,52px);letter-spacing:-1.6px;line-height:1.08}
- .word-cycle{display:inline;white-space:normal}
- .word-cycle span{display:none;animation:none}
- .word-cycle span:first-child{display:inline}
- .lead{font-size:17px}
- .preview{padding:16px}
- .preview-main{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:12px}
- .donut{width:min(132px,100%)}
- .cards,.audiences,.steps{grid-template-columns:minmax(0,1fr)}
- .audience,.card{width:100%}
- .cta{padding:26px;gap:18px}
- .cta>div{flex-basis:100%}
- .cta>.btn{white-space:normal}
-}
-@media(max-width:390px){
- .wrap{width:calc(100% - 24px)}
- .logo{font-size:19px;letter-spacing:1.5px;gap:6px}
- .brandmark{width:29px;height:29px}
- .navlinks .btn.ghost{font-size:12px;padding:9px 10px}
- .preview-kpis{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
- .kpi{padding:8px 6px}
- .kpi b{font-size:18px}
- .kpi small{font-size:9px}
- .preview-main{grid-template-columns:minmax(0,1fr)}
- .legend{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
- .legend-row{display:grid;justify-items:center;text-align:center;font-size:9px}
- .legend-label{display:grid;justify-items:center;gap:4px}
- .legend-row b{font-size:10px}
- .ticket{align-items:flex-start}
- .tag{font-size:9px}
-}
-
-
-/* Final overlap guard: robust sizing and small-screen typography */
-*,*::before,*::after{box-sizing:border-box}
-img,svg,video,canvas{max-width:100%;height:auto}
-.wrap{min-width:0}
+:root{color-scheme:dark;--bg:#070d18;--navy:#0b1830;--blue:#123a70;--panel:#101f36;--panel2:#142943;--line:rgba(151,181,220,.2);--text:#f5f8fc;--muted:#b7c5d8;--orange:#ff8a32;--orange2:#ffb15c;--teal:#39d6c2;--red:#e16c6c}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:92px}
+body{margin:0;min-width:320px;background:radial-gradient(ellipse at 12% 4%,rgba(40,123,255,.10),transparent 30%),radial-gradient(ellipse at 90% 32%,rgba(255,138,50,.06),transparent 26%),var(--bg);color:var(--text);font:16px/1.65 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+a{color:inherit;text-decoration:none}
+.wrap{width:min(1160px,calc(100% - 40px));margin-inline:auto}
+.nav{position:sticky;top:0;z-index:50;min-height:78px;display:flex;align-items:center;justify-content:space-between;gap:22px;padding:12px max(20px,calc((100% - 1160px)/2));background:rgba(7,13,24,.88);backdrop-filter:blur(18px);border-bottom:1px solid rgba(151,181,220,.13)}
+.logo{display:inline-flex;align-items:center;gap:9px;flex:none;font-size:24px;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--orange)}
+.brandmark{width:36px;height:36px;flex:none}
+.navlinks{display:flex;align-items:center;justify-content:flex-end;gap:clamp(12px,2vw,25px);min-width:0;color:var(--muted);font-size:14px}
+.navlinks a:not(.btn){transition:color .2s}
+.navlinks a:not(.btn):hover{color:var(--orange2)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:11px 18px;border:1px solid var(--orange);border-radius:10px;background:linear-gradient(110deg,var(--orange),var(--orange2));color:#111a28;font-weight:850;line-height:1.3;text-align:center;box-shadow:0 9px 24px rgba(255,138,50,.14);transition:transform .2s,box-shadow .2s,filter .2s}
+.btn:hover{transform:translateY(-2px);filter:brightness(1.05);box-shadow:0 14px 30px rgba(255,138,50,.22)}
+.btn.ghost{background:transparent;color:var(--text);border-color:var(--line);box-shadow:none}
+.btn.ghost:hover{border-color:var(--orange);color:var(--orange2)}
+.hero{position:relative;isolation:isolate;overflow:hidden;padding:82px 0 76px;background:radial-gradient(ellipse at 82% 18%,rgba(57,214,194,.12),transparent 35%),radial-gradient(ellipse at 8% 100%,rgba(255,138,50,.10),transparent 34%),linear-gradient(180deg,#0b1830,#10233b)}
+.hero:after{content:"";position:absolute;z-index:-1;width:360px;height:360px;right:-170px;top:10%;border:1px solid rgba(57,214,194,.16);border-radius:50%;box-shadow:0 0 75px rgba(57,214,194,.08),inset 0 0 60px rgba(57,214,194,.04);pointer-events:none}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:clamp(24px,4vw,48px);align-items:center}
 .hero-grid>*{min-width:0}
-h1{overflow-wrap:normal;word-break:normal}
-.lead,.section-head p,.audience p,.card p,.cta p{overflow-wrap:anywhere}
-.audience,.card,.step,.panel,.preview{min-width:0}
-.nav{height:auto;min-height:82px;flex-wrap:wrap}
-.navlinks{flex-wrap:wrap;justify-content:flex-end}
-@media(max-width:760px){
- .nav{min-height:68px;flex-wrap:nowrap;gap:8px}
- .navlinks{flex:0 1 auto;min-width:0}
- .navlinks .btn{max-width:100%;white-space:normal;text-align:center}
- .hero-grid{grid-template-columns:minmax(0,1fr);gap:30px}
- .hero-grid>div{width:100%}
- h1{font-size:clamp(34px,9vw,52px);line-height:1.1;letter-spacing:-1.2px}
- .word-cycle{display:inline}
- .word-cycle span{display:none;animation:none}
- .word-cycle span:first-child{display:inline}
- .actions{align-items:stretch}
- .actions .btn{flex:1 1 100%;width:100%;white-space:normal;text-align:center}
- .preview-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
- .preview-main{grid-template-columns:minmax(0,1fr);justify-items:center}
- .legend{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
- .legend-row{min-width:0;flex-wrap:wrap;justify-content:center;text-align:center}
- .audiences,.cards,.steps{grid-template-columns:minmax(0,1fr)}
- .audience .btn{max-width:100%;white-space:normal;text-align:center}
- .cta{display:flex;flex-direction:column;align-items:flex-start}
- .cta>.btn{max-width:100%;white-space:normal;text-align:center}
-}
-@media(max-width:420px){
- .wrap{width:calc(100% - 24px)}
- .logo{font-size:19px;letter-spacing:1.2px}
- .brandmark{width:29px;height:29px}
- .navlinks .btn{font-size:11px;padding:8px 9px}
- .preview-kpis{gap:5px}
- .kpi{padding:8px 5px}
- .kpi b{font-size:18px}
- .kpi small{font-size:9px}
- .legend{gap:4px}
- .legend-row{font-size:9px}
- .ticket{flex-wrap:wrap}
-}
-
-
-
-/* Final responsive collision fixes */
-.nav{height:auto;min-height:82px;flex-wrap:wrap}
-.nav>.logo{flex:0 0 auto}
-.navlinks{min-width:0;max-width:100%;flex:0 1 auto;flex-wrap:wrap;justify-content:flex-end}
-.navlinks>*{min-width:0}
-.hero-grid,.hero-grid>*{min-width:0}
-.hero-grid{grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr)}
-.preview-head,.ticket,.footer-inner{min-width:0;flex-wrap:wrap}
-.preview-head>*{min-width:0;overflow-wrap:anywhere}
-.ticket>*{min-width:0}
-.cta{isolation:isolate;min-width:0}
-.cta:after{z-index:-1}
-.cta>div,.cta>.btn{position:relative;z-index:1;min-width:0}
-.audiences,.cards,.steps{grid-template-columns:repeat(2,minmax(0,1fr))}
-.audience,.card,.step{min-width:0;max-width:100%}
-.audience h3,.card h3,.step h3{overflow-wrap:anywhere}
-@media(max-width:1000px){
- .navlinks{flex-wrap:wrap}
- .hero-grid{grid-template-columns:minmax(0,1fr)}
- .preview{width:100%;max-width:none}
-}
-@media(max-width:760px){
- .nav{flex-wrap:nowrap;align-items:center}
- .navlinks{flex:0 1 auto}
- .navlinks .btn{max-width:100%;white-space:normal}
- .audiences,.cards,.steps{grid-template-columns:minmax(0,1fr)}
- .cta{width:100%;padding:24px}
- .cta>div{flex:1 1 100%}
- .cta>.btn{width:100%;max-width:100%;white-space:normal}
-}
-@media(max-width:560px){
- .preview-head{align-items:flex-start;flex-direction:column}
- .ticket{align-items:flex-start}
- .tag{white-space:normal}
- .cta h2{font-size:clamp(26px,7vw,34px);line-height:1.15}
-}
-
-
-/* Consolidated layout repair: stable sizing across all screen widths */
-html{width:100%;overflow-x:clip}
-body{width:100%;min-width:320px;overflow-x:clip}
-*,*::before,*::after{box-sizing:border-box}
-img,svg,video,canvas{max-width:100%}
-.wrap,.section,.section>.wrap,.hero-grid,.hero-grid>*,.nav,.navlinks,
-.audiences,.audience,.cards,.card,.steps,.step,.preview,.preview-head,
-.preview-main,.preview-kpis,.cta,.cta>div,.footer-inner{min-width:0;max-width:100%}
-h1,h2,h3,p,li,a,summary,small,strong,span{overflow-wrap:anywhere}
-.nav{height:auto;min-height:76px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.navlinks{display:flex;align-items:center;justify-content:flex-end;gap:clamp(10px,1.5vw,22px);flex-wrap:wrap;min-width:0}
-.navlinks a{min-width:0}
-.navlinks .btn{white-space:normal;text-align:center}
-.hero-grid{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:clamp(20px,4vw,44px);align-items:center}
-.hero-grid>*{min-width:0}
-.hero h1{max-width:100%;font-size:clamp(34px,5.2vw,66px);line-height:1.08;letter-spacing:clamp(-2px,-.16vw,-.7px);overflow-wrap:normal}
-.word-cycle{display:inline;white-space:normal}
-.word-cycle span{display:none!important;animation:none!important}
-.word-cycle span:first-child{display:inline!important}
-.preview{width:100%;justify-self:stretch;overflow:hidden;transform:none;animation:none}
-.preview-head{flex-wrap:wrap;align-items:flex-start}
-.preview-main{grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr)}
-.preview-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
-.kpi,.legend,.donut-wrap{min-width:0}
+.eyebrow{display:inline-flex;align-items:center;gap:9px;padding:7px 12px;border:1px solid rgba(255,177,92,.3);border-radius:99px;background:rgba(7,13,24,.3);color:var(--orange2);font-size:11px;font-weight:850;letter-spacing:1px;text-transform:uppercase}
+.dot{width:7px;height:7px;flex:none;border-radius:50%;background:var(--orange);box-shadow:0 0 12px rgba(255,138,50,.8)}
+h1{max-width:780px;margin:22px 0 18px;font-size:clamp(39px,5.5vw,68px);line-height:1.07;letter-spacing:-2.1px;overflow-wrap:normal}
+h1 em{color:var(--orange2);font-style:normal}
+.word-cycle{display:inline-grid;vertical-align:baseline;white-space:normal}
+.word-cycle span{grid-area:1/1;animation:wordSwap 9s infinite}
+.word-cycle span:nth-child(2){animation-delay:3s}
+.word-cycle span:nth-child(3){animation-delay:6s}
+@keyframes wordSwap{0%,5%{opacity:0;transform:translateY(10px)}10%,29%{opacity:1;transform:translateY(0)}35%,100%{opacity:0;transform:translateY(-9px)}}
+.lead{max-width:690px;margin:0 0 26px;color:var(--muted);font-size:18px}
+.actions{display:flex;flex-wrap:wrap;gap:12px}
+.micro{margin:17px 0 0;color:#8fa2ba;font-size:12px}
+.preview{width:100%;min-width:0;overflow:hidden;padding:22px;border:1px solid rgba(57,214,194,.25);border-radius:19px;background:linear-gradient(145deg,rgba(20,41,67,.98),rgba(11,24,45,.98));box-shadow:0 24px 70px rgba(0,0,0,.34),0 0 36px rgba(57,214,194,.06)}
+.preview-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:15px;border-bottom:1px solid var(--line);font-size:13px}
+.live{color:#9ce7c2;font-size:10px;font-weight:800;white-space:nowrap}
+.preview-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:16px 0}
+.kpi{min-width:0;padding:12px;border:1px solid rgba(151,181,220,.1);border-radius:11px;background:#172e4a}
+.kpi b{display:block;font-size:23px;line-height:1.25}
+.kpi small{color:var(--muted);font-size:10px}
+.preview-main{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:16px;align-items:center;margin:18px 0}
+.donut-wrap{display:grid;justify-items:center;gap:9px;min-width:0}
+.donut{position:relative;display:grid;place-items:center;width:140px;max-width:100%;aspect-ratio:1;border-radius:50%;background:conic-gradient(var(--teal) 0 68%,var(--orange) 68% 90%,var(--red) 90% 100%)}
+.donut:before{content:"";position:absolute;inset:17px;border-radius:50%;background:#142943}
+.donut-center{position:relative;text-align:center}
+.donut-center b{display:block;font-size:25px;line-height:1.1}
+.donut-center small{color:var(--muted);font-size:10px}
+.chart-caption{color:var(--muted);font-size:11px;text-align:center}
+.legend{display:grid;gap:10px;min-width:0}
+.legend-row{display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}
+.legend-label{display:flex;align-items:center;gap:7px;min-width:0}
+.legend-dot{width:8px;height:8px;flex:none;border-radius:50%}
+.legend-row b{color:var(--text);font-size:12px}
+.preview-activity{padding-top:7px;border-top:1px solid var(--line)}
+.preview-activity-title{margin:8px 0 2px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.8px}
+.ticket{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid rgba(151,181,220,.12);font-size:12px}
+.ticket span{color:var(--muted)}
+.tag{padding:4px 8px;border-radius:20px;background:#4b3426;color:#ffd4a2;font-size:10px;white-space:nowrap}
+.tag.green{background:#1e443d;color:#a8edcf}
+.section{padding:78px 0}
+.section.alt{background:linear-gradient(180deg,rgba(15,33,55,.96),rgba(10,24,42,.96));border-block:1px solid rgba(151,181,220,.07)}
+.section-head{max-width:760px;margin:0 0 34px}
+.kicker{color:var(--orange2);font-size:11px;font-weight:900;letter-spacing:1.5px;text-transform:uppercase}
+.section h2{margin:10px 0 12px;font-size:clamp(29px,4vw,43px);line-height:1.14;letter-spacing:-1px}
+.section-head p{margin:0;color:var(--muted)}
 .audiences{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.audience,.card{position:relative;min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:16px;background:linear-gradient(145deg,#142b47,#0e2038);box-shadow:0 12px 34px rgba(0,0,0,.12);transition:transform .25s,border-color .25s,box-shadow .25s}
+.audience{padding:28px}
+.audience:hover,.card:hover{transform:translateY(-5px);border-color:rgba(255,138,50,.65);box-shadow:0 18px 42px rgba(0,0,0,.25)}
+.audience .label{color:var(--orange2);font-size:10px;font-weight:900;letter-spacing:1.2px}
+.audience h3{margin:10px 0;font-size:25px;line-height:1.2}
+.audience p,.card p{color:var(--muted)}
+.audience ul{padding-left:19px;color:#d9e4f1;font-size:14px}
+.audience li{margin:7px 0}
 .cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
-.audience,.card,.step{min-width:0;max-width:100%;height:auto}
-.cta{display:flex;align-items:center;justify-content:space-between;gap:22px;flex-wrap:wrap;overflow:hidden}
-.cta>div{flex:1 1 360px;position:relative;z-index:1}
-.cta>.btn{flex:0 1 auto;max-width:100%;position:relative;z-index:1;white-space:normal}
-.cta:after{z-index:0;max-width:100%;pointer-events:none}
-.footer-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;flex-wrap:wrap}
-@media(max-width:1000px){
- .hero-grid{grid-template-columns:minmax(0,1fr);gap:28px}
- .preview{max-width:100%}
- .navlinks{gap:10px}
- .cards{grid-template-columns:repeat(2,minmax(0,1fr))}
- .steps{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
+.card{padding:22px}
+.icon{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#1b3656;color:var(--orange2);font-size:21px}
+.card h3{margin:15px 0 7px;font-size:17px;line-height:1.3}
+.card p{margin:0;font-size:14px}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.step{min-width:0;padding:17px 14px 0;border-top:2px solid rgba(255,138,50,.45)}
+.step b{color:var(--orange2);font-size:11px;letter-spacing:1px}
+.step h3{margin:9px 0 5px;font-size:16px}
+.step p{margin:0;color:var(--muted);font-size:13px}
+.cta{position:relative;isolation:isolate;display:flex;align-items:center;justify-content:space-between;gap:24px;overflow:hidden;padding:48px;border:1px solid rgba(87,143,219,.35);border-radius:20px;background:radial-gradient(ellipse at 90% 5%,rgba(40,123,255,.2),transparent 38%),radial-gradient(ellipse at 5% 100%,rgba(255,138,50,.14),transparent 42%),linear-gradient(135deg,#03060d,#0a1425);box-shadow:0 24px 65px rgba(0,0,0,.36)}
+.cta:after{content:"V";position:absolute;z-index:-1;right:7%;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.035);font-size:clamp(150px,20vw,245px);font-weight:950;line-height:1;pointer-events:none}
+.cta>div{position:relative;z-index:1;flex:1 1 450px;min-width:0}
+.cta h2{margin:8px 0 12px;font-size:clamp(28px,3.5vw,40px);line-height:1.15}
+.cta p{margin:0;color:#c5d1e2}
+.cta p a{color:var(--orange2)!important;text-decoration:underline;text-underline-offset:3px}
+.contact-actions{position:relative;z-index:1;display:flex;flex:0 1 auto;flex-wrap:wrap;gap:10px}
+.contact-actions .btn{white-space:nowrap}
+.faq{max-width:850px}
+.faq details{padding:17px 0;border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;font-weight:800}
+.faq p{margin-bottom:0;color:var(--muted);font-size:14px}
+.footer{padding:30px 0;border-top:1px solid var(--line);background:rgba(3,8,16,.55);color:var(--muted);font-size:13px}
+.footer-inner{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.footer .logo{font-size:20px}
+.footer a:not(.logo){color:var(--orange2)}
+.reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
+.reveal.is-visible{opacity:1;transform:translateY(0)}
+@media(max-width:1000px){.hero-grid{grid-template-columns:minmax(0,1fr);gap:30px}.preview{max-width:760px}.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.steps{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){
  .wrap{width:calc(100% - 32px)}
- .nav{min-height:64px;flex-wrap:nowrap;gap:8px;padding-top:10px;padding-bottom:10px}
- .navlinks{flex:0 1 auto;gap:8px}
- .navlinks a:not(.btn){display:none}
- .navlinks .btn{font-size:13px;padding:10px 12px}
- .hero{padding:48px 0 54px}
- .hero h1{font-size:clamp(34px,8.8vw,50px);line-height:1.1;letter-spacing:-1.2px}
- .lead{font-size:17px}
- .actions{display:flex;flex-wrap:wrap}
- .actions .btn{flex:1 1 100%;width:100%;white-space:normal;text-align:center}
+ .nav{position:relative;min-height:0;flex-wrap:wrap;gap:8px;padding:12px 16px}
+ .navlinks{width:100%;justify-content:flex-start;gap:17px;overflow-x:auto;flex-wrap:nowrap;padding:4px 0 7px;font-size:13px;scrollbar-width:thin}
+ .navlinks a{flex:none}
+ .navlinks .btn{margin-left:auto}
+ .hero{padding:52px 0 58px}
+ h1{font-size:clamp(36px,9vw,52px);letter-spacing:-1.2px;line-height:1.1}
+ .lead{font-size:16.5px}
  .preview{padding:16px}
  .preview-main{grid-template-columns:minmax(0,1fr);justify-items:center}
- .donut{width:min(132px,100%)}
- .legend{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
- .legend-row{min-width:0;justify-content:center;flex-wrap:wrap;text-align:center}
+ .donut{width:130px}
+ .legend{width:100%;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .legend-row{display:grid;justify-items:center;text-align:center;font-size:10px}
+ .legend-label{display:grid;justify-items:center;gap:4px}
  .audiences,.cards,.steps{grid-template-columns:minmax(0,1fr)}
- .audience,.card,.step{width:100%}
- .cta{display:flex;flex-direction:column;align-items:flex-start;padding:24px;gap:16px}
- .cta>div,.cta>.btn{width:100%;flex:1 1 auto}
- .cta>.btn{text-align:center}
- .section{padding:58px 0}
+ .audience{padding:23px}
+ .cta{align-items:flex-start;flex-direction:column;padding:27px}
+ .cta>div,.contact-actions{width:100%;flex:1 1 auto}
+ .contact-actions .btn{flex:1 1 180px;white-space:normal}
+ .section{padding:60px 0}
 }
-@media(max-width:420px){
- .wrap{width:calc(100% - 24px)}
- .logo{font-size:19px;letter-spacing:1.2px;gap:6px}
- .brandmark{width:29px;height:29px}
- .navlinks .btn{font-size:11px;padding:8px 9px}
- .preview-kpis{gap:5px}
- .kpi{padding:8px 5px}
- .kpi b{font-size:18px}
- .kpi small{font-size:9px}
- .legend{gap:4px}
- .legend-row{font-size:9px}
- .cta h2{font-size:28px;line-height:1.15}
-}
-
-
-/* Contact section: bold black premium finish */
-#contact.cta{
-  position:relative;
-  isolation:isolate;
-  background:
-    radial-gradient(ellipse at 88% 8%,rgba(40,123,255,.22),transparent 38%),
-    radial-gradient(ellipse at 5% 100%,rgba(255,138,50,.13),transparent 42%),
-    linear-gradient(135deg,#03060D 0%,#080F1D 58%,#0A1425 100%);
-  border:1px solid rgba(116,164,235,.38);
-  box-shadow:0 26px 70px rgba(0,0,0,.48),0 0 34px rgba(40,123,255,.12),inset 0 1px 0 rgba(255,255,255,.07);
-}
-#contact.cta:before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  padding:1px;
-  background:linear-gradient(115deg,rgba(255,138,50,.72),rgba(40,123,255,.55) 48%,rgba(57,214,194,.42));
-  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
-  -webkit-mask-composite:xor;
-  mask-composite:exclude;
-  pointer-events:none;
-  z-index:0;
-}
-#contact.cta:after{color:rgba(255,255,255,.035);z-index:0}
-#contact.cta .kicker{color:#FFAA62}
-#contact.cta h2{color:#F7FAFF;text-shadow:0 3px 24px rgba(40,123,255,.16)}
-#contact.cta p{color:#C5D1E2}
-#contact.cta p a{color:#FFB15C!important;text-decoration-color:rgba(255,177,92,.7)!important}
-#contact.cta>.btn{
-  background:linear-gradient(110deg,#FF862F,#FFB45F);
-  color:#101827;
-  border:1px solid rgba(255,205,157,.55);
-  box-shadow:0 12px 30px rgba(255,138,50,.22),0 0 0 4px rgba(255,138,50,.07);
-}
-#contact.cta>.btn:hover{box-shadow:0 16px 36px rgba(255,138,50,.32),0 0 0 5px rgba(255,138,50,.10)}
-@media(max-width:760px){#contact.cta{padding:26px}}
-
-
-/* Subtle, non-layout-changing motion: decorative effects only */
-@keyframes contactGlowPulse{
-  0%,100%{box-shadow:0 26px 70px rgba(0,0,0,.48),0 0 28px rgba(40,123,255,.10),inset 0 1px 0 rgba(255,255,255,.07)}
-  50%{box-shadow:0 28px 76px rgba(0,0,0,.52),0 0 42px rgba(40,123,255,.20),inset 0 1px 0 rgba(255,255,255,.09)}
-}
-@keyframes contactBorderFlow{
-  0%,100%{opacity:.65}
-  50%{opacity:1}
-}
-@keyframes contactButtonShine{
-  0%,68%,100%{transform:translateX(-160%) skewX(-22deg);opacity:0}
-  76%{opacity:.8}
-  92%{transform:translateX(460%) skewX(-22deg);opacity:0}
-}
-#contact.cta{animation:contactGlowPulse 6s ease-in-out infinite}
-#contact.cta:before{animation:contactBorderFlow 4.5s ease-in-out infinite}
-#contact.cta>.btn{overflow:hidden}
-#contact.cta>.btn:after{
-  content:"";
-  position:absolute;
-  top:-35%;bottom:-35%;left:0;width:24%;
-  background:linear-gradient(90deg,transparent,rgba(255,255,255,.48),transparent);
-  transform:translateX(-160%) skewX(-22deg);
-  animation:contactButtonShine 7s ease-in-out infinite;
-  pointer-events:none;
-}
-@media(prefers-reduced-motion:reduce){
-  #contact.cta,#contact.cta:before,#contact.cta>.btn:after{animation:none!important}
-}
-
-
-/* Visibility repair: these elements carry .reveal in the markup but are
-   intentionally not observed by the cards-only repeat animation. */
-.section-head.reveal,
-.step.reveal,
-.cta.reveal{
-  opacity:1 !important;
-  transform:none !important;
-}
-
-/* Dedicated repeat-on-scroll animation; isolated from the site's generic .reveal rules. */
-.audience.vamsee-scroll-card,
-.card.vamsee-scroll-card{
-  opacity:0 !important;
-  transform:translate3d(0,28px,0) !important;
-  transition:opacity .65s ease,transform .65s cubic-bezier(.2,.7,.2,1) !important;
-  will-change:opacity,transform;
-}
-.audience.vamsee-scroll-card.vamsee-in-view,
-.card.vamsee-scroll-card.vamsee-in-view{
-  opacity:1 !important;
-  transform:translate3d(0,0,0) !important;
-}
-.audience.vamsee-scroll-card.vamsee-in-view:hover,
-.card.vamsee-scroll-card.vamsee-in-view:hover{
-  transform:translate3d(0,-6px,0) !important;
-}
-@media(prefers-reduced-motion:reduce){
-  .audience.vamsee-scroll-card,.card.vamsee-scroll-card,
-  .audience.vamsee-scroll-card.vamsee-in-view,.card.vamsee-scroll-card.vamsee-in-view{
-    opacity:1 !important;transform:none !important;transition:none !important;
-  }
-}
-
-/* VAMSEE mobile polish: compact wordmark, balanced hero and working fade-away text */
-@media(max-width:760px){
-  .logo{letter-spacing:1.15px;gap:7px;font-size:21px}
-  .brandmark{width:30px;height:30px}
-  .nav{align-items:center;justify-content:space-between;min-height:70px;flex-wrap:nowrap}
-  .navlinks{align-items:center;justify-content:flex-end;flex:0 1 auto}
-  .navlinks .btn.ghost{font-size:13px;padding:10px 13px;white-space:nowrap}
-  .hero{padding:44px 0 50px}
-  .hero h1{font-size:clamp(34px,8.2vw,46px);line-height:1.12;letter-spacing:-1.25px}
-  .word-cycle{display:inline-grid!important;vertical-align:baseline;white-space:normal;max-width:100%}
-  .word-cycle span{display:block!important;grid-area:1/1;animation:wordSwapClean 9s linear infinite both!important}
-  .word-cycle span:nth-child(2){animation-delay:3s!important}
-  .word-cycle span:nth-child(3){animation-delay:6s!important}
-  .lead{font-size:16.5px;line-height:1.65}
-  .actions{gap:10px}
-  .actions .btn{min-height:56px}
-}
-@keyframes wordSwapClean{
-  0%{opacity:0;transform:translateY(11px)}
-  3%{opacity:1;transform:translateY(0)}
-  27%{opacity:1;transform:translateY(0)}
-  32%{opacity:0;transform:translateY(-9px)}
-  100%{opacity:0;transform:translateY(-9px)}
-}
-@media(max-width:390px){
-  .logo{font-size:19px;letter-spacing:1px;gap:5px}
-  .navlinks .btn.ghost{font-size:12px;padding:9px 10px}
-  .hero h1{font-size:clamp(32px,8.4vw,38px);letter-spacing:-1px}
-}
-@media(prefers-reduced-motion:reduce){
-  .word-cycle span{animation:none!important;opacity:1!important;transform:none!important}
-  .word-cycle span:not(:first-child){display:none!important}
-}
-
+@media(max-width:420px){.wrap{width:calc(100% - 24px)}.logo{font-size:20px;letter-spacing:1.2px}.brandmark{width:31px;height:31px}.navlinks{gap:14px}.preview-kpis{gap:5px}.kpi{padding:9px 6px}.kpi b{font-size:19px}.kpi small{font-size:9px}.legend{gap:4px}.legend-row{font-size:9px}.contact-actions{flex-direction:column}.contact-actions .btn{width:100%}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}.word-cycle span{opacity:1;transform:none}.word-cycle span:not(:first-child){display:none}}
 </style></head><body>
-<header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#35C6B0" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#F49B45" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
+<header class="wrap nav"><a class="logo" href="#"><svg class="brandmark" viewBox="0 0 40 40" aria-hidden="true"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#FF8A32" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#FFB15C" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>VAM<span>SEE</span></a><nav class="navlinks"><a href="#solutions">Solutions</a><a href="#workflow">How it works</a><a href="#about">About us</a><a href="#contact">Contact</a><a class="btn ghost" href="/app.html">Team login ↗</a></nav></header>
 <main><section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow"><span class="dot"></span> Logistics operations · Customer support · Business process solutions</div><h1>Connect logistics operations and customer support with <em class="word-cycle" aria-label="one smarter workflow"><span>one smarter workflow.</span><span>better business flow.</span><span>clearer operations.</span></em></h1><p class="lead">VAMSEE helps businesses streamline shipment operations, tracking and exception follow-ups while improving customer support, ticket management and back-office processes through people, process and practical technology.</p><div class="actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20product%20demo">Request a product demo →</a><a class="btn ghost" href="#solutions">Explore solutions</a></div><p class="micro">Flexible support solutions for growing businesses. Start with a conversation about your process.</p></div>
 <div class="preview"><div class="preview-head"><b>VAMSEE · Operations overview</b><span class="live">● WORKSPACE PREVIEW</span></div><div class="preview-kpis"><div class="kpi"><b>24</b><small>Open enquiries</small></div><div class="kpi"><b>68</b><small>In-transit shipments</small></div><div class="kpi"><b>AI</b><small>Reply assistance</small></div></div><div class="preview-main"><div class="donut-wrap"><div class="donut" role="img" aria-label="Illustrative shipment status: 68 percent in transit, 22 percent delivered, 10 percent exceptions"><div class="donut-center"><b>100</b><small>Shipments</small></div></div><div class="chart-caption">Shipment status · sample view</div></div><div class="legend"><div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#35C6B0"></i>In transit</span><b>68%</b></div><div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#F49B45"></i>Delivered</span><b>22%</b></div><div class="legend-row"><span class="legend-label"><i class="legend-dot" style="background:#E16C6C"></i>Exceptions</span><b>10%</b></div></div></div><div class="preview-activity"><div class="preview-activity-title">RECENT FOLLOW-UPS</div><div class="ticket"><div><b>Shipment delayed</b><br><span>AWB · Customer enquiry</span></div><i class="tag">HIGH PRIORITY</i></div><div class="ticket"><div><b>Tracking not updated</b><br><span>Carrier scan follow-up</span></div><i class="tag green">IN REVIEW</i></div><div class="ticket"><div><b>Customer reply draft</b><br><span>Suggested · Human approval</span></div><i class="tag green">AI ASSIST</i></div></div><p class="micro">Illustrative dashboard — sample figures, not live customer data.</p></div></div></section>
 <section class="section" id="solutions"><div class="wrap"><div class="reveal section-head"><div class="kicker">Two connected solution pillars</div><h2>Logistics operations and customer support. Together.</h2><p>VAMSEE brings operational visibility and customer experience workflows together—supporting logistics businesses with shipment operations and helping businesses across industries manage customer service and back-office processes.</p></div><div class="audiences"><article class="reveal audience"><div class="label">01 · LOGISTICS OPERATIONS SOLUTIONS</div><h3>Keep shipments, exceptions and follow-ups moving.</h3><p>Practical operations support and visibility for logistics, 3PL, courier, fulfilment and e-commerce operations teams.</p><ul><li>Shipment registry and tracking-event visibility</li><li>Delay, delivery exception and tracking enquiry management</li><li>Carrier, seller and customer follow-up coordination</li><li>Operational ticket queues, priorities and escalation tracking</li><li>Shipment data import, reporting and process improvement</li></ul><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20Logistics%20Operations%20Demo">Explore logistics solutions →</a></article><article class="reveal audience"><div class="label">02 · CUSTOMER SUPPORT & BUSINESS PROCESSES</div><h3>Deliver consistent support at every customer touchpoint.</h3><p>Customer experience and managed process support for businesses across SaaS, e-commerce, education, healthcare and other sectors.</p><ul><li>Customer queries, complaints and service requests</li><li>Ticket ownership, escalation and service-level workflows</li><li>CRM and helpdesk setup and optimisation</li><li>Back-office administration and customer onboarding</li><li>AI-assisted classification, response drafts and reporting</li></ul><a class="btn ghost" href="mailto:vibhorjmd@gmail.com?subject=VAMSEE%20Customer%20Support%20Discussion">Explore customer support solutions →</a></article></div></div></section>
 <section class="section alt"><div class="wrap"><div class="reveal section-head"><div class="kicker">What VAMSEE helps with</div><h2>Connected services across both solution pillars.</h2><p>Choose logistics operations support, customer support services, technology enablement—or a combination scoped to your business.</p></div><div class="cards"><article class="reveal card"><div class="icon">📦</div><h3>Shipment & Logistics Operations</h3><p>Organise shipment records, tracking events, delivery exceptions, carrier follow-ups and logistics service workflows.</p></article><article class="reveal card"><div class="icon">⌕</div><h3>Customer Support Management</h3><p>Manage customer queries, complaints and service requests through organised support workflows.</p></article><article class="reveal card"><div class="icon">✳</div><h3>Managed Customer Support</h3><p>Flexible support operations for agreed channels, business hours, volumes and service requirements.</p></article><article class="reveal card"><div class="icon">↗</div><h3>Ticket & Escalation Management</h3><p>Structure ticket queues, ownership, priorities and escalation paths so important issues get attention.</p></article><article class="reveal card"><div class="icon">◷</div><h3>CRM & Helpdesk Setup</h3><p>Configure and improve customer support workflows using suitable CRM and helpdesk tools.</p></article><article class="reveal card"><div class="icon">⇄</div><h3>Back-office Process Support</h3><p>Organise data handling, verification, documentation and repeatable administrative workflows.</p></article><article class="reveal card"><div class="icon">◎</div><h3>AI & Workflow Automation</h3><p>Identify repetitive tasks and introduce practical automation with human review and clear controls.</p></article></div></div></section>
 <section class="section" id="workflow"><div class="wrap"><div class="reveal section-head"><div class="kicker">A simple workflow</div><h2>A simple, collaborative way to improve your process.</h2><p>We first understand how your team works, then recommend the right combination of people, process and technology.</p></div><div class="steps"><div class="reveal step"><b>01 · CAPTURE</b><h3>Understand your process</h3><p>We learn about your customers, channels, volumes and recurring service issues.</p></div><div class="reveal step"><b>02 · UNDERSTAND</b><h3>Design the workflow</h3><p>We agree responsibilities, service levels, escalation rules and tools.</p></div><div class="reveal step"><b>03 · RESPOND</b><h3>Launch a focused pilot</h3><p>We start with a defined team or workflow and measure what needs improvement.</p></div><div class="reveal step"><b>04 · FOLLOW THROUGH</b><h3>Review and improve</h3><p>We review service quality, turnaround times and operational feedback together.</p></div></div></div></section>
 <section class="section alt" id="about"><div class="wrap"><div class="reveal section-head"><div class="kicker">About VAMSEE</div><h2>Logistics operations and customer experience for growing businesses.</h2><p>VAMSEE connects logistics operations workflows with customer support and business process services. We help teams improve shipment visibility, manage service exceptions and organise customer enquiries, complaints and operational follow-ups.</p></div><div class="audiences"><article class="reveal audience"><h3>What we do</h3><p>We combine practical operations tools and service workflows to support shipment records, tracking enquiries, delivery delays, customer tickets, complaints and escalations.</p><ul><li>Customer support across agreed channels</li><li>Complaint, query and escalation management</li><li>Back-office and business process support</li><li>CRM, helpdesk and workflow automation</li><li>Process improvement, reporting and service quality</li></ul></article><article class="reveal audience"><h3>Our approach</h3><p>We believe every customer deserves timely, helpful support and every business process should have clear ownership. Our approach combines trained people, organised workflows, useful technology and human oversight.</p><p>We work with each client to define scope, channels, operating hours, responsibilities and measurable service expectations before a pilot begins.</p></article></div></div></section>
-<section class="section alt"><div class="wrap"><div class="reveal cta" id="contact"><div><div class="kicker">Contact us</div><h2>Let’s improve your logistics operations and customer support.</h2><p>For logistics operations, managed support, process improvement, automation enquiries and partnerships, write to us at <a href="mailto:vibhorjmd@gmail.com" style="color:var(--lime);text-decoration:underline">vibhorjmd@gmail.com</a>. Call or WhatsApp us at <a href="tel:+917210563739" style="color:var(--lime);text-decoration:underline">+91 72105 63739</a>.</p></div><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=Book%20a%20VAMSEE%20demo">Email VAMSEE →</a></div></div></section>
+<section class="section alt"><div class="wrap"><div class="reveal cta" id="contact"><div><div class="kicker">Contact us</div><h2>Let’s improve your logistics operations and customer support.</h2><p>For logistics operations, managed support, process improvement, automation enquiries and partnerships, write to us at <a href="mailto:vibhorjmd@gmail.com" style="color:var(--lime);text-decoration:underline">vibhorjmd@gmail.com</a>. Call us at <a href="tel:+917210563739" style="color:var(--orange2);text-decoration:underline">+91 72105 63739</a>, or start a WhatsApp conversation using the button.</p></div><div class="contact-actions"><a class="btn" href="mailto:vibhorjmd@gmail.com?subject=Book%20a%20VAMSEE%20demo">Email VAMSEE →</a><a class="btn ghost" href="https://wa.me/917210563739?text=Hello%20VAMSEE%2C%20I%27d%20like%20to%20discuss%20your%20services." target="_blank" rel="noopener noreferrer">WhatsApp us ↗</a></div></div></div></section>
 <section class="section"><div class="wrap faq"><div class="reveal section-head"><div class="kicker">Straight answers</div><h2>Frequently asked questions</h2></div><details><summary>Which businesses can work with VAMSEE?</summary><p>VAMSEE serves two connected needs: logistics operations solutions for logistics and fulfilment workflows, and customer support/business process services for businesses across sectors. We scope each engagement around the client’s process and requirements.</p></details><details><summary>Can VAMSEE manage our complete customer support process?</summary><p>Managed support can be considered after we understand your channels, volumes, operating hours, languages, systems and service expectations. Scope and coverage are agreed before any engagement.</p></details><details><summary>Does VAMSEE use AI to respond to customers automatically?</summary><p>AI can assist with classification and draft responses. Customer-facing replies should be reviewed and approved by an authorised person unless a client separately approves a carefully defined automation.</p></details><details><summary>How do we get started?</summary><p>Contact us with a short description of your process and the support challenges you want to solve. We’ll arrange a discussion and define whether a pilot is suitable.</p></details></div></section></main>
 <footer class="footer"><div class="wrap footer-inner"><div><a class="logo" href="#">VAM<span>SEE</span></a><div>Intelligent Operations. Seamless Support.</div></div><div>© 2026 VAMSEE · <a href="mailto:vibhorjmd@gmail.com">Contact VAMSEE</a> · <a href="/app.html">Team login</a></div></div></footer>
 <script>
