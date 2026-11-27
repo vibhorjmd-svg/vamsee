@@ -117,6 +117,31 @@ export default {
       return json({ok:true,user:{id:userId,email,full_name:name,role:"org_admin"},organization:{id:orgId,name:company,slug},subscription:{plan_code:"starter",status:"trialing",trial_ends_at:expires}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
     }
 
+
+    if(url.pathname==="/api/auth/accept-invitation"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Invitation acceptance is not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const raw=typeof b.token==="string"?b.token:"",pass=typeof b.password==="string"?b.password:"";
+      if(raw.length<32||raw.length>200||pass.length<12||pass.length>128)return json({error:"A valid invitation and a password of at least 12 characters are required."},400);
+      const digest=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(raw))),hash=Array.from(digest,x=>x.toString(16).padStart(2,"0")).join("");
+      const invite=await env.DB.prepare("SELECT i.id,i.organization_id,i.email,i.full_name,i.role,o.status AS org_status FROM organization_invitations i JOIN organizations o ON o.id=i.organization_id WHERE i.token_hash=? AND i.accepted_at IS NULL AND i.expires_at>?").bind(hash,new Date().toISOString()).first();
+      if(!invite||invite.org_status!=="active")return json({error:"This invitation is invalid, expired, or already used."},410);
+      if(await env.DB.prepare("SELECT id FROM users WHERE email=? COLLATE NOCASE").bind(invite.email).first())return json({error:"An account with this email already exists. Contact the workspace administrator."},409);
+      const userId="usr_"+crypto.randomUUID(),now=new Date().toISOString(),passwordHash=await hashPassword(pass);
+      try{
+        const results=await env.DB.batch([
+          env.DB.prepare("UPDATE organization_invitations SET accepted_at=? WHERE id=? AND accepted_at IS NULL AND expires_at>?").bind(now,invite.id,now),
+          env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(userId,invite.email,invite.full_name,passwordHash,now,now),
+          env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,?,'active')").bind("mem_"+crypto.randomUUID(),invite.organization_id,userId,invite.role),
+          env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'invitation.accepted','user',?,?)").bind("aud_"+crypto.randomUUID(),invite.organization_id,userId,userId,JSON.stringify({role:invite.role}))
+        ]);
+        if(!results?.[0]?.meta?.changes)return json({error:"This invitation has already been used."},410);
+      }catch(error){console.error("VAMSEE invitation acceptance failed",error);return json({error:"Invitation could not be accepted. Please contact the workspace administrator."},500);}
+      const token=await userToken({user_id:userId,organization_id:invite.organization_id},env.VAMSEE_SESSION_SECRET);
+      return json({ok:true,user:{id:userId,email:invite.email,full_name:invite.full_name,role:invite.role}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+    }
+
     if(url.pathname==="/api/auth/login"&&request.method==="POST"){
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
       if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Individual login is not configured."},503);
