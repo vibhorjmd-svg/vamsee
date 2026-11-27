@@ -91,6 +91,32 @@ export default {
         return json({error:"Owner setup failed: "+String(error?.message||error).slice(0,240)},500);
       }
     }
+
+    if(url.pathname==="/api/auth/register"&&request.method==="POST"){
+      if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
+      if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Workspace registration is not configured."},503);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),company=String(b.organization_name||"").trim(),pass=typeof b.password==="string"?b.password:"";
+      const type=String(b.organization_type||"seller");
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||company.length<2||company.length>120||pass.length<12||pass.length>128||!["seller","logistics","courier"].includes(type))return json({error:"Enter valid details and a password of at least 12 characters."},400);
+      if(await env.DB.prepare("SELECT id FROM users WHERE email=? COLLATE NOCASE").bind(email).first())return json({error:"An account with this email already exists. Please sign in instead."},409);
+      const base=company.toLowerCase().normalize("NFKD").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,42)||"workspace";
+      let slug=base;
+      for(let n=1;await env.DB.prepare("SELECT id FROM organizations WHERE slug=?").bind(slug).first();n++)slug=base+"-"+n;
+      const orgId="org_"+crypto.randomUUID(),userId="usr_"+crypto.randomUUID(),now=new Date().toISOString(),expires=new Date(Date.now()+14*86400000).toISOString(),passwordHash=await hashPassword(pass);
+      try{
+        await env.DB.batch([
+          env.DB.prepare("INSERT INTO organizations(id,name,slug,organization_type,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(orgId,company,slug,type,now,now),
+          env.DB.prepare("INSERT INTO users(id,email,full_name,password_hash,status,created_at,updated_at) VALUES(?,?,?,?,'active',?,?)").bind(userId,email,name,passwordHash,now,now),
+          env.DB.prepare("INSERT INTO memberships(id,organization_id,user_id,role,status) VALUES(?,?,?,'org_admin','active')").bind("mem_"+crypto.randomUUID(),orgId,userId),
+          env.DB.prepare("INSERT INTO subscriptions(id,organization_id,plan_code,status,trial_ends_at,created_at,updated_at) VALUES(?,?,'starter','trialing',?,?,?)").bind("sub_"+crypto.randomUUID(),orgId,expires,now,now),
+          env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'workspace.created','organization',?,?)").bind("aud_"+crypto.randomUUID(),orgId,userId,orgId,JSON.stringify({plan:"starter",trial_days:14}))
+        ]);
+      }catch(error){console.error("VAMSEE tenant registration failed",error);return json({error:"Workspace could not be created. Please try again."},500);}
+      const token=await userToken({user_id:userId,organization_id:orgId},env.VAMSEE_SESSION_SECRET);
+      return json({ok:true,user:{id:userId,email,full_name:name,role:"org_admin"},organization:{id:orgId,name:company,slug},subscription:{plan_code:"starter",status:"trialing",trial_ends_at:expires}},201,{"Set-Cookie":USER_SESSION_COOKIE+"="+token+"; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age="+USER_SESSION_SECONDS});
+    }
+
     if(url.pathname==="/api/auth/login"&&request.method==="POST"){
       if(!sameOrigin(request))return json({error:"Request origin rejected."},403);
       if(!env.DB||!env.VAMSEE_SESSION_SECRET||env.VAMSEE_SESSION_SECRET.length<32)return json({error:"Individual login is not configured."},503);
