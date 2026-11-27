@@ -176,9 +176,9 @@ input,select,textarea,button{max-width:100%;min-width:0}
   <div id="loginError" role="alert" aria-live="polite"></div>
 </section>
 <main id="appContent" class="wrap">
-<header class="top"><div><div class="brand"><span class="wordmark">VAM<span>SEE</span></span></div><span class="brandtagline">Intelligent Operations. Seamless Support.</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag">PRIVATE WORKSPACE · LOGISTICS + CUSTOMER OPERATIONS</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
-<h1>Logistics and customer operations, <span style="color:var(--lime)">connected.</span></h1>
-<p class="sub">One workspace for customer enquiries and logistics operations. Manage tickets, complaints and escalations alongside shipment records, tracking events and delivery exceptions.</p>
+<header class="top"><div><div class="brand"><span class="wordmark">VAM<span>SEE</span></span></div><span class="brandtagline">Intelligent Operations. Seamless Support.</span></div><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><div class="tag" id="workspaceBrandTag">PRIVATE CLIENT WORKSPACE</div><button class="btn secondary logout" type="button" onclick="logout()">Log out</button></div></header>
+<h1 id="workspaceHeading">Business operations and customer experience, <span style="color:var(--lime)">connected.</span></h1>
+<p class="sub" id="workspaceSubheading">Your client workspace for customer enquiries, onboarding, service requests, ticket ownership, SLA monitoring and operational reporting. Logistics and shipment tracking are available as an optional specialist module.</p>
 <section class="panel" id="userAdminPanel" style="display:none;margin-bottom:18px" aria-labelledby="userAdminTitle">
 <h2 id="userAdminTitle">Workspace access management</h2>
 <p class="muted" style="font-size:13px">Create team accounts with least-privilege access. Share temporary passwords separately.</p>
@@ -200,8 +200,9 @@ input,select,textarea,button{max-width:100%;min-width:0}
 <div class="metric"><strong id="progress">00</strong><small>In progress</small></div>
 <div class="metric"><strong id="resolved">00</strong><small>Resolved</small></div>
 </div>
+<section class="panel" id="ticketAnalyticsPanel" style="margin-bottom:18px" aria-labelledby="ticketAnalyticsTitle"><h2 id="ticketAnalyticsTitle">Customer operations analytics</h2><p class="muted" style="font-size:13px">Live ticket status mix for this client workspace.</p><div id="ticketAnalytics" class="sla-grid"><p class="muted">Loading ticket analytics…</p></div></section>
 <section class="panel sla-panel" aria-labelledby="slaTitle">
-<h2 id="slaTitle">3. SLA monitoring</h2>
+<h2 id="slaTitle">SLA & service-level monitoring</h2>
 <p class="sla-policy">Demo targets: HIGH 4h · MEDIUM 24h · NORMAL 72h. Set targets to each customer's contract before production.</p>
 <div class="sla-grid">
 <div class="metric"><strong id="slaOverdue">00</strong><small>Overdue active tickets</small></div>
@@ -209,12 +210,12 @@ input,select,textarea,button{max-width:100%;min-width:0}
 <div class="metric"><strong id="slaCompliance">—</strong><small>Resolved within SLA</small></div>
 </div>
 <div class="sla-grid" style="margin-top:12px">
-<div class="metric"><strong id="stagnantCount">00</strong><small>Logistics shipments without movement for 24h+</small></div>
+<div class="metric"><strong id="stagnantCount">00</strong><small>Optional logistics shipments without movement for 24h+</small></div>
 <div class="metric"><strong id="monitoredCount">00</strong><small>Logistics shipments with tracking timestamps</small></div>
 </div>
 </section>
 <section class="panel" id="shipmentPanel" style="margin-bottom:18px" aria-labelledby="shipmentTitle">
-<h2 id="shipmentTitle">3. Logistics operations · Shipment registry & tracking events</h2>
+<h2 id="shipmentTitle">Optional module · Logistics & fulfilment operations</h2>
 <div class="panel" style="margin-top:18px">
  <div class="panelhead"><div><h3>Import shipment data</h3><p class="muted" style="font-size:13px">Upload a courier or order-management CSV export. No courier login, password or API key is needed.</p></div><span class="pill good">Offline import</span></div>
  <form id="shipmentImportForm" style="display:grid;gap:10px;max-width:620px">
@@ -257,8 +258,8 @@ input,select,textarea,button{max-width:100%;min-width:0}
 </div>
 </section>
 <section class="panel">
-<h2>2. Customer support & logistics service queue</h2>
-<p class="muted" style="margin-top:-8px;font-size:13px">Live service requests from the VAMSEE database, including general customer support and logistics-related enquiries. HIGH-priority tickets are flagged for escalation; shipment tracking and event history are managed in the logistics operations module below.</p>
+<h2>Customer support & business service queue</h2>
+<p class="muted" style="margin-top:-8px;font-size:13px">Live client service requests across industries. Track general enquiries, onboarding, complaints and operational tasks; logistics-specific tracking remains in the optional module.</p>
 <div style="display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;margin:12px 0">
 <input id="ticketSearch" type="search" placeholder="Search customer, AWB or ticket" aria-label="Search tickets">
 <select id="priorityFilter" aria-label="Filter by priority"><option value="">All priorities</option><option value="HIGH">High</option><option value="MEDIUM">Medium</option><option value="NORMAL">Normal</option></select>
@@ -322,6 +323,16 @@ async function createUser(event){
   await loadUsers();
  }catch(error){message.textContent=error.message;}
  finally{button.disabled=false;}
+}
+function applyWorkspaceBranding(user){
+ if(!user)return;
+ const brand=(user.brand_name||user.organization_name||'VAMSEE').trim();
+ const tag=document.getElementById('workspaceBrandTag');if(tag)tag.textContent=brand.toUpperCase()+' · PRIVATE WORKSPACE';
+ const heading=document.getElementById('workspaceHeading');if(heading)heading.innerHTML=escapeHTML(brand)+' <span style="color:var(--lime)">workspace.</span>';
+ const primary=/^#[0-9a-fA-F]{6}$/.test(user.brand_primary_color||'')?user.brand_primary_color:null;
+ const accent=/^#[0-9a-fA-F]{6}$/.test(user.brand_accent_color||'')?user.brand_accent_color:null;
+ if(primary)document.documentElement.style.setProperty('--bg',primary);
+ if(accent){document.documentElement.style.setProperty('--lime',accent);document.documentElement.style.setProperty('--amber',accent);}
 }
 function configureUserAdmin(){
  const panel=document.getElementById("userAdminPanel"),role=currentUser?.role,options=ADMIN_ROLE_OPTIONS[role]||[];
@@ -491,8 +502,15 @@ function renderSlaMetrics(){
  document.getElementById('stagnantCount').textContent=String(monitored.filter(t=>shipmentMovement(t,now).state==='stagnant').length).padStart(2,'0');
  document.getElementById('monitoredCount').textContent=String(monitored.length).padStart(2,'0');
 }
+function renderSupportAnalytics(tickets){
+ const root=document.getElementById('ticketAnalytics');if(!root)return;
+ const total=tickets.length||0;
+ const groups=[['Open',tickets.filter(t=>t.status==='OPEN').length,'#F49B45'],['In progress',tickets.filter(t=>t.status==='IN_PROGRESS').length,'#35C6B0'],['Resolved',tickets.filter(t=>t.status==='RESOLVED').length,'#8DA9C7']];
+ root.innerHTML=groups.map(([label,count,color])=>{const pct=total?Math.round(count/total*100):0;return '<div class="metric"><strong>'+String(count).padStart(2,'0')+'</strong><small>'+label+' · '+pct+'%</small><div style="height:7px;background:#102B46;border-radius:8px;overflow:hidden;margin-top:10px"><div style="height:100%;width:'+pct+'%;background:'+color+';border-radius:8px"></div></div></div>';}).join('');
+}
 function renderTickets(tickets){
  allTickets=Array.isArray(tickets)?tickets:[];
+ renderSupportAnalytics(allTickets);
  document.getElementById('total').textContent=String(allTickets.length).padStart(2,'0');
  document.getElementById('urgent').textContent=String(allTickets.filter(t=>t.priority==='HIGH'&&t.status!=='RESOLVED').length).padStart(2,'0');
  document.getElementById('progress').textContent=String(allTickets.filter(t=>t.status==='IN_PROGRESS').length).padStart(2,'0');
@@ -616,7 +634,7 @@ async function checkSession(){
   let data=await response.json();
   if(!data.authenticated){response=await fetch('/api/session',{headers:{'Accept':'application/json'},cache:'no-store'});data=await response.json();}
   if(response.ok&&data.authenticated){
-   currentUser=data.user||null;configureUserAdmin();document.getElementById('shipmentCreateForm').style.display=shipmentCanEdit()?'block':'none';gate.style.display='none';app.classList.add('authenticated');loadTickets();loadShipments();return;
+   currentUser=data.user||null;applyWorkspaceBranding(currentUser);configureUserAdmin();document.getElementById('shipmentCreateForm').style.display=shipmentCanEdit()?'block':'none';gate.style.display='none';app.classList.add('authenticated');loadTickets();loadShipments();return;
   }
   currentUser=null;document.getElementById('userAdminPanel').style.display='none';
   gate.style.display='block';app.classList.remove('authenticated');
