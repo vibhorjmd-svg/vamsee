@@ -163,6 +163,42 @@ export default {
     const canOperate=canManage||["logistics_agent","seller_operator","courier_operator"].includes(role);
 
 
+
+    if(request.method==="GET"&&url.pathname==="/api/organization"){
+      const organization=await env.DB.prepare("SELECT id,name,slug,organization_type,status,created_at FROM organizations WHERE id=?").bind(organizationId).first();
+      return json({organization:organization||null});
+    }
+    if(request.method==="PATCH"&&url.pathname==="/api/organization"){
+      if(!["platform_admin","org_admin"].includes(role))return json({error:"Only workspace administrators can update workspace details."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const name=String(b.name||"").trim();
+      if(name.length<2||name.length>120)return json({error:"Workspace name must be between 2 and 120 characters."},400);
+      await env.DB.prepare("UPDATE organizations SET name=?,updated_at=? WHERE id=?").bind(name,new Date().toISOString(),organizationId).run();
+      return json({ok:true,name});
+    }
+    if(request.method==="GET"&&url.pathname==="/api/billing/plan"){
+      const sub=await env.DB.prepare("SELECT plan_code,status,trial_ends_at,current_period_start,current_period_end FROM subscriptions WHERE organization_id=?").bind(organizationId).first();
+      const counts=await env.DB.prepare("SELECT COUNT(*) AS seats FROM memberships WHERE organization_id=? AND status='active'").bind(organizationId).first();
+      const limits={starter:3,growth:10,scale:50,enterprise:null};
+      return json({subscription:sub||{plan_code:"unassigned",status:"inactive"},active_seats:Number(counts?.seats||0),seat_limit:limits[sub?.plan_code]??null,billing_ready:false,notice:"Online payments are not enabled yet. No subscription charge will be made from this workspace."});
+    }
+    if(request.method==="POST"&&url.pathname==="/api/invitations"){
+      if(!["platform_admin","org_admin"].includes(role))return json({error:"Only workspace administrators can invite teammates."},403);
+      let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
+      const email=String(b.email||"").trim().toLowerCase(),name=String(b.full_name||"").trim(),newRole=String(b.role||"viewer");
+      const allowed=["org_admin","seller_admin","seller_operator","logistics_manager","logistics_agent","courier_manager","courier_operator","viewer"];
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254||name.length<2||name.length>120||!allowed.includes(newRole))return json({error:"Provide a valid email, full name and role."},400);
+      if(await env.DB.prepare("SELECT id FROM users WHERE email=? COLLATE NOCASE").bind(email).first())return json({error:"A user with this email already has an account."},409);
+      const pending=await env.DB.prepare("SELECT id FROM organization_invitations WHERE organization_id=? AND email=? COLLATE NOCASE AND accepted_at IS NULL AND expires_at>?").bind(organizationId,email,new Date().toISOString()).first();
+      if(pending)return json({error:"A valid invitation for this email already exists."},409);
+      const raw=toBase64Url(crypto.getRandomValues(new Uint8Array(32))),digest=new Uint8Array(await crypto.subtle.digest("SHA-256",encoder.encode(raw))),hash=Array.from(digest,x=>x.toString(16).padStart(2,"0")).join("");
+      const id="inv_"+crypto.randomUUID(),expires=new Date(Date.now()+7*86400000).toISOString();
+      await env.DB.prepare("INSERT INTO organization_invitations(id,organization_id,email,full_name,role,token_hash,expires_at,created_by) VALUES(?,?,?,?,?,?,?,?)").bind(id,organizationId,email,name,newRole,hash,expires,p.user_id).run();
+      const inviteUrl=new URL("/accept-invite.html",request.url);inviteUrl.searchParams.set("token",raw);
+      await env.DB.prepare("INSERT INTO audit_logs(id,organization_id,actor_user_id,action,resource_type,resource_id,metadata_json) VALUES(?,?,?,'invitation.created','invitation',?,?)").bind("aud_"+crypto.randomUUID(),organizationId,p.user_id,id,JSON.stringify({email,role:newRole,expires_at:expires})).run();
+      return json({ok:true,invitation:{id,email,full_name:name,role:newRole,expires_at:expires,invite_url:inviteUrl.toString()},delivery:"Copy and send this secure invitation link to the teammate. Email delivery is not configured yet."},201);
+    }
+
     if(request.method==="GET"&&url.pathname==="/api/users"){
       if(!member||!canManage)return json({error:"Only workspace administrators can view users."},403);
       const result=await env.DB.prepare("SELECT u.id,u.email,u.full_name,u.status,m.role,m.created_at FROM users u JOIN memberships m ON m.user_id=u.id WHERE m.organization_id=? ORDER BY m.created_at DESC LIMIT 200").bind(organizationId).all();
