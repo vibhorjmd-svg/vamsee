@@ -190,7 +190,7 @@ export default {
 
 
     if(request.method==="GET"&&url.pathname==="/api/organization"){
-      const organization=await env.DB.prepare("SELECT id,name,slug,organization_type,status,created_at FROM organizations WHERE id=?").bind(organizationId).first();
+      const organization=await env.DB.prepare("SELECT id,name,slug,organization_type,status,created_at,brand_name,brand_primary_color,brand_accent_color,brand_logo_url FROM organizations WHERE id=?").bind(organizationId).first();
       return json({organization:organization||null});
     }
     if(request.method==="PATCH"&&url.pathname==="/api/organization"){
@@ -198,8 +198,15 @@ export default {
       let b;try{b=await request.json();}catch{return json({error:"Invalid JSON."},400);}
       const name=String(b.name||"").trim();
       if(name.length<2||name.length>120)return json({error:"Workspace name must be between 2 and 120 characters."},400);
-      await env.DB.prepare("UPDATE organizations SET name=?,updated_at=? WHERE id=?").bind(name,new Date().toISOString(),organizationId).run();
-      return json({ok:true,name});
+      const brandName=String(b.brand_name||"").trim();
+      const primary=String(b.brand_primary_color||"#102b46").trim();
+      const accent=String(b.brand_accent_color||"#f49b45").trim();
+      const logo=String(b.brand_logo_url||"").trim();
+      if(brandName.length>80)return json({error:"Brand name must be 80 characters or fewer."},400);
+      if(!/^#[0-9a-fA-F]{6}$/.test(primary)||!/^#[0-9a-fA-F]{6}$/.test(accent))return json({error:"Brand colours must be valid six-digit hex colours."},400);
+      if(logo){try{const u=new URL(logo);if(u.protocol!=="https:")throw new Error();}catch{return json({error:"Logo URL must be a valid HTTPS image URL."},400);}}
+      await env.DB.prepare("UPDATE organizations SET name=?,brand_name=?,brand_primary_color=?,brand_accent_color=?,brand_logo_url=?,updated_at=? WHERE id=?").bind(name,brandName||null,primary,accent,logo||null,new Date().toISOString(),organizationId).run();
+      return json({ok:true,name,brand_name:brandName||name,brand_primary_color:primary,brand_accent_color:accent,brand_logo_url:logo||null});
     }
     if(request.method==="GET"&&url.pathname==="/api/billing/plan"){
       const sub=await env.DB.prepare("SELECT plan_code,status,trial_ends_at,current_period_start,current_period_end FROM subscriptions WHERE organization_id=?").bind(organizationId).first();
