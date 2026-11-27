@@ -7,11 +7,11 @@ VAMSEE is a logistics operations and customer-support workspace for teams that n
 ## Live product
 
 - **Website:** https://black-smoke-f08f.vibhorjmd.workers.dev/
-- **Operations workspace:** https://black-smoke-f08f.vibhorjmd.workers.dev/app.html
+- **Operations workspace (classic):** https://black-smoke-f08f.vibhorjmd.workers.dev/app.html\n- **VAMSEE Desk (new helpdesk UI):** https://black-smoke-f08f.vibhorjmd.workers.dev/desk.html
 - **Enquiries:** vibhorjmd@gmail.com
 - **Phone:** +91 72105 63739
 
-## What is available today
+## VAMSEE Desk\n\nA Freshdesk-inspired customer operations interface is available at `/desk.html`. It uses the existing authenticated ticket, shipment and AI-assist APIs for live workspace data. The first release includes overview metrics, ticket search and filters, ticket creation, status updates, logistics visibility, AI-assisted reply drafts and basic operational analytics. Customer replies remain drafts for human review.\n\n## What is available today
 
 - Private, named-user sign-in with expiring signed sessions.
 - Organisation-scoped ticket and shipment records.
