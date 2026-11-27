@@ -182,6 +182,7 @@ input,select,textarea,button{max-width:100%;min-width:0}
 <section class="panel" id="userAdminPanel" style="display:none;margin-bottom:18px" aria-labelledby="userAdminTitle">
 <h2 id="userAdminTitle">Workspace access management</h2>
 <p class="muted" style="font-size:13px">Create team accounts with least-privilege access. Share temporary passwords separately.</p>
+<div id="brandingSettings" class="panel" style="margin:14px 0;background:var(--panel2)"><h3 style="margin-top:0">Client workspace branding</h3><p class="muted" style="font-size:13px">Set the name and colours shown in this private workspace.</p><form id="brandingForm" onsubmit="saveBranding(event)"><div class="sla-grid"><div><label for="brandWorkspaceName">Workspace name</label><input id="brandWorkspaceName" maxlength="120" required></div><div><label for="brandDisplayName">Client display name (optional)</label><input id="brandDisplayName" maxlength="80" placeholder="e.g. Acme Support"></div><div><label for="brandPrimary">Primary colour</label><input id="brandPrimary" type="color" value="#102b46" style="min-height:44px;padding:5px"></div><div><label for="brandAccent">Accent colour</label><input id="brandAccent" type="color" value="#f49b45" style="min-height:44px;padding:5px"></div></div><button class="btn" id="saveBrandingButton" type="submit">Save client branding</button></form><p id="brandingMessage" class="muted" role="status" aria-live="polite"></p></div>
 <form id="userCreateForm">
 <div class="sla-grid">
 <div><label for="newUserName">Full name</label><input id="newUserName" required maxlength="120" autocomplete="name"></div>
@@ -324,6 +325,36 @@ async function createUser(event){
  }catch(error){message.textContent=error.message;}
  finally{button.disabled=false;}
 }
+async function loadBrandingSettings(){
+ const panel=document.getElementById("brandingSettings");
+ if(!panel)return;
+ const canEdit=["platform_admin","org_admin"].includes(currentUser?.role);
+ panel.style.display=canEdit?"block":"none";
+ if(!canEdit)return;
+ try{
+  const response=await fetch("/api/organization",{headers:{"Accept":"application/json"},cache:"no-store"});
+  const data=await response.json();if(!response.ok||!data.organization)throw new Error(data.error||"Could not load workspace details.");
+  const org=data.organization;
+  document.getElementById("brandWorkspaceName").value=org.name||"";
+  document.getElementById("brandDisplayName").value=org.brand_name||"";
+  document.getElementById("brandPrimary").value=org.brand_primary_color||"#102b46";
+  document.getElementById("brandAccent").value=org.brand_accent_color||"#f49b45";
+ }catch(error){document.getElementById("brandingMessage").textContent=error.message;}
+}
+async function saveBranding(event){
+ event.preventDefault();
+ const button=document.getElementById("saveBrandingButton"),message=document.getElementById("brandingMessage");
+ button.disabled=true;message.textContent="Saving client branding…";
+ const payload={name:document.getElementById("brandWorkspaceName").value.trim(),brand_name:document.getElementById("brandDisplayName").value.trim(),brand_primary_color:document.getElementById("brandPrimary").value,brand_accent_color:document.getElementById("brandAccent").value};
+ try{
+  const response=await fetch("/api/organization",{method:"PATCH",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
+  const data=await response.json();if(!response.ok)throw new Error(data.error||"Could not save client branding.");
+  const session=await fetch("/api/auth/session",{headers:{"Accept":"application/json"},cache:"no-store"});const sessionData=await session.json();
+  if(session.ok&&sessionData.authenticated){currentUser=sessionData.user;applyWorkspaceBranding(currentUser);}
+  message.textContent="Client workspace branding saved successfully.";
+ }catch(error){message.textContent=error.message;}
+ finally{button.disabled=false;}
+}
 function applyWorkspaceBranding(user){
  if(!user)return;
  const brand=(user.brand_name||user.organization_name||'VAMSEE').trim();
@@ -341,6 +372,7 @@ function configureUserAdmin(){
  const select=document.getElementById("newUserRole");
  select.replaceChildren(...options.map(roleName=>{const option=document.createElement("option");option.value=roleName;option.textContent=roleName.replaceAll("_"," ");return option;}));
  loadUsers();
+ loadBrandingSettings();
 }
 
 function shipmentCanEdit(){
