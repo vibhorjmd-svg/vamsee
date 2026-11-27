@@ -43,7 +43,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE_URL="https://black-smoke-f08f.vibhorjmd.workers.dev"
-          for path in / /app.html; do
+          for path in / /app.html /desk.html; do
             curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors "$BASE_URL$path" -o /dev/null
             echo "PASS: $path is serving"
           done
