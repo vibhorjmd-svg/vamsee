@@ -11,18 +11,18 @@
 <body>
 <section id="loginGate" class="login">
  <div class="brand"><svg class="brandmark" viewBox="0 0 40 40"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#21ad9c" stroke-width="3.5" stroke-linecap="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#f49b45" stroke-width="3.5" stroke-linecap="round"/></svg><div>VAM<span>SEE</span><small>INTELLIGENT OPERATIONS</small></div></div>
- <h1>Welcome to VAMSEE Desk</h1><p>Sign in to your customer operations workspace.</p>
+ <h1>Welcome to VAMSEE Desk</h1><p>Sign in to your VAMSEE operations workspace.</p>
  <form id="loginForm"><label for="email">Work email</label><input id="email" type="email" autocomplete="username" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><button class="btn dark" style="width:100%;margin-top:18px" id="loginBtn">Sign in securely</button></form>
  <div id="loginMsg" class="message" role="alert"></div>
 </section>
 <div id="app" class="shell hidden">
  <aside class="sidebar">
-  <div class="brand"><svg class="brandmark" viewBox="0 0 40 40"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#21ad9c" stroke-width="3.5" stroke-linecap="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#f49b45" stroke-width="3.5" stroke-linecap="round"/></svg><div>VAM<span>SEE</span><small>DESK · CUSTOMER OPERATIONS</small></div></div>
+  <div class="brand"><svg class="brandmark" viewBox="0 0 40 40"><path d="M7 29 19 8l7 12 7-12" fill="none" stroke="#21ad9c" stroke-width="3.5" stroke-linecap="round"/><path d="m19 8 7 12-7 12" fill="none" stroke="#f49b45" stroke-width="3.5" stroke-linecap="round"/></svg><div>VAM<span>SEE</span><small>AI-ASSISTED BUSINESS OPERATIONS</small></div></div>
   <div class="workspace"><small>Current workspace</small><b id="workspaceName">VAMSEE Workspace</b></div>
   <div class="navlabel">Workspace</div><nav class="nav">
    <button class="active" data-view="overview"><span class="ico">▦</span>Overview</button>
    <button data-view="tickets"><span class="ico">▤</span>Tickets</button>
-   <button data-view="logistics"><span class="ico">⇄</span>Logistics</button>
+   <button data-view="logistics"><span class="ico">▧</span>Industry modules</button>
    <button data-view="ai"><span class="ico">✧</span>AI Assistant</button>
    <button data-view="analytics"><span class="ico">▥</span>Analytics</button>
   </nav>
@@ -52,13 +52,13 @@
     </section>
    </section>
    <section class="view" id="view-logistics">
-    <div class="heading"><div><h1>Logistics operations</h1><p>Shipment visibility alongside your customer support workflow.</p></div><button class="btn secondary" id="refreshShipBtn">↻ Refresh shipments</button></div>
-    <section class="panel"><div class="panelhead"><div><h2>Shipment registry</h2><p>Existing shipment records from the VAMSEE workspace</p></div><span class="pill normal">Connected</span></div><div class="tablewrap"><table><thead><tr><th>Tracking number</th><th>Carrier</th><th>Current status</th><th>Last update</th></tr></thead><tbody id="shipmentRows"><tr><td colspan="4" class="empty">Loading shipments…</td></tr></tbody></table></div></section>
+    <div class="heading"><div><h1>Industry modules</h1><p>Optional workflows for sector-specific operations. Core VAMSEE support workflows work across industries.</p></div><button class="btn secondary" id="refreshShipBtn">↻ Refresh shipments</button></div>
+    <section class="panel"><div class="panelhead"><div><h2>Logistics module · Shipment registry</h2><p>An optional module for logistics and fulfilment clients</p></div><span class="pill normal">Connected</span></div><div class="tablewrap"><table><thead><tr><th>Tracking number</th><th>Carrier</th><th>Current status</th><th>Last update</th></tr></thead><tbody id="shipmentRows"><tr><td colspan="4" class="empty">Loading shipments…</td></tr></tbody></table></div></section>
    </section>
    <section class="view" id="view-ai">
     <div class="heading"><div><h1>VAMSEE AI Assistant</h1><p>Classify an enquiry and prepare a customer-ready draft for human review.</p></div></div>
     <section class="panel"><div class="panelhead"><div><h2>Enquiry copilot</h2><p>AI-assisted classification · reply drafting · next best action</p></div><span class="pill normal">Human approval required</span></div><div class="insight">
-     <div class="formgrid"><div class="formrow"><label>Customer name</label><input id="aiName" placeholder="Customer name"></div><div class="formrow"><label>Tracking / reference</label><input id="aiTracking" placeholder="Optional reference"></div><div class="formrow"><label>Business type</label><select id="aiIndustry"><option value="general">General customer support</option><option value="ecommerce">E-commerce</option><option value="logistics">Logistics</option><option value="saas">SaaS / technology</option><option value="publishing">Publishing</option></select></div><div class="formrow"><label>Issue type</label><select id="aiIssue"><option value="other">General enquiry</option><option value="delay">Shipment delay</option><option value="refund">Refund / cancellation</option><option value="technical">Technical issue</option><option value="delivery">Delivery complaint</option><option value="billing">Billing question</option></select></div><div class="formrow full"><label>Customer message</label><textarea id="aiMessage" placeholder="Paste the customer's message here…"></textarea></div></div>
+     <div class="formgrid"><div class="formrow"><label>Customer name</label><input id="aiName" placeholder="Customer name"></div><div class="formrow"><label>Tracking / reference</label><input id="aiTracking" placeholder="Optional reference"></div><div class="formrow"><label>Business type</label><select id="aiIndustry"><option value="general">General business / customer support</option><option value="ecommerce">E-commerce & retail</option><option value="logistics">Logistics & fulfilment</option><option value="saas">SaaS / technology</option><option value="publishing">Publishing</option><option value="services">Professional services</option><option value="education">Education</option></select></div><div class="formrow"><label>Issue type</label><select id="aiIssue"><option value="other">General enquiry</option><option value="delay">Shipment delay</option><option value="refund">Refund / cancellation</option><option value="technical">Technical issue</option><option value="delivery">Delivery complaint</option><option value="billing">Billing question</option></select></div><div class="formrow full"><label>Customer message</label><textarea id="aiMessage" placeholder="Paste the customer's message here…"></textarea></div></div>
      <button class="btn" id="runAI">✧ Analyse enquiry</button><div id="aiResult" class="message" aria-live="polite"></div>
     </div></section>
    </section>
@@ -72,7 +72,7 @@
 </div>
 <div class="modalback" id="ticketModal"><div class="modal"><div class="modalhead"><h2>Create a new ticket</h2><button class="btn secondary" id="closeModal">✕</button></div><div class="modalbody"><form id="ticketForm"><div class="formgrid">
  <div class="formrow"><label>Customer name</label><input id="customerName" required maxlength="120"></div><div class="formrow"><label>Tracking / reference number</label><input id="trackingNumber" maxlength="100" placeholder="Optional — use a reference ID if non-logistics"></div>
- <div class="formrow"><label>Business area</label><select id="businessArea"><option>Customer Support</option><option>Logistics Operations</option><option>E-commerce</option><option>SaaS Support</option><option>Publishing</option></select></div><div class="formrow"><label>Issue category</label><input id="issueType" required maxlength="120" placeholder="e.g. Refund request, delivery delay"></div>
+ <div class="formrow"><label>Business area</label><select id="businessArea"><option>Customer Support</option><option>Customer Onboarding</option><option>Business Operations</option><option>Back-office Process Support</option><option>E-commerce</option><option>SaaS Support</option><option>Publishing</option><option>Logistics Operations (optional module)</option></select></div><div class="formrow"><label>Issue category</label><input id="issueType" required maxlength="120" placeholder="e.g. Refund request, delivery delay"></div>
  <div class="formrow full"><label>Customer message</label><textarea id="customerMessage" required maxlength="3000"></textarea></div></div><div class="modalactions"><button type="button" class="btn secondary" id="cancelModal">Cancel</button><button class="btn" id="saveTicket">Create ticket</button></div><div id="ticketMsg" class="message"></div></form></div></div></div>
 <div class="toast" id="toast"></div>
 <script>
