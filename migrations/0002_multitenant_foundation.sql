@@ -1,5 +1,7 @@
 -- VAMSEE multi-tenant foundation
--- Apply once to the existing D1 database after backing up the database.
+-- The tickets.organization_id column is created by migration 0001 on fresh databases.
+-- Existing installations may already have this column from the original bootstrap.
+-- Keep this migration safe to retry: do not ALTER TABLE to add it a second time.
 PRAGMA foreign_keys = ON;
 
 CREATE TABLE IF NOT EXISTS organizations (
@@ -91,7 +93,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 );
 
 -- Preserve the existing private demo while preparing every ticket for tenant isolation.
-ALTER TABLE tickets ADD COLUMN organization_id TEXT REFERENCES organizations(id);
 INSERT OR IGNORE INTO organizations (id, name, slug, organization_type)
 VALUES ('org_vamsee_demo', 'VAMSEE Demo Workspace', 'vamsee-demo', 'platform');
 UPDATE tickets SET organization_id = 'org_vamsee_demo' WHERE organization_id IS NULL;
