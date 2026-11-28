@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS tickets (
   next_action TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'OPEN' CHECK (status IN ('OPEN','IN_PROGRESS','RESOLVED')),
   customer_reply TEXT NOT NULL,
+  organization_id TEXT REFERENCES organizations(id),
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
